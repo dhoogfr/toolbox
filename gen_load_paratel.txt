@@ -1,0 +1,109 @@
+create tablespace failover_test
+datafile '+ASMDATA01' size 500M
+extent management local autoallocate
+segment space management auto;
+
+create user fdh
+identified by fdh123
+default tablespace failover_test
+temporary tablespace temp
+quota unlimited on failover_test
+account unlock;
+
+create table fdh.failover_testing
+( veld1     char(2000))
+tablespace failover_test;
+
+insert into fdh.failover_testing
+select 'x'
+from dba_objects;
+
+commit;
+
+create or replace procedure fdh.p_failover_testing
+as
+
+begin
+
+  update fdh.failover_testing
+  set veld1 = 'x';
+  
+  commit;
+  
+  execute immediate 'alter system checkpoint';
+  
+  insert into fdh.failover_testing
+  select *
+  from fdh.failover_testing
+  where rownum <= 1000;
+    
+  commit;
+
+  delete
+  from fdh.failover_testing
+  where mod(rownum,500) = 0;
+    
+  commit;
+
+end p_failover_testing;
+/
+
+
+
+create user fdh2
+identified by fdh123
+default tablespace failover_test
+temporary tablespace temp
+quota unlimited on failover_test
+account unlock;
+
+create table fdh2.failover_testing
+( veld1     char(2000))
+tablespace failover_test;
+
+insert into fdh2.failover_testing
+select 'x'
+from dba_objects;
+
+commit;
+
+create or replace procedure fdh2.p_failover_testing
+as
+
+begin
+
+  update fdh2.failover_testing
+  set veld1 = 'x';
+  
+  commit;
+  
+  execute immediate 'alter system checkpoint';
+  
+  insert into fdh2.failover_testing
+  select *
+  from fdh2.failover_testing
+  where rownum <= 1000;
+    
+  commit;
+
+  delete
+  from fdh2.failover_testing
+  where mod(rownum,500) = 0;
+    
+  commit;
+
+end p_failover_testing;
+/
+
+BEGIN
+for i in 1 .. 5000
+loop
+    BEGIN
+        p_failover_testing;
+    EXCEPTION
+        when others then
+            null;
+    END;
+end loop;
+END;
+/

@@ -1,0 +1,133 @@
+sys@GLIMS> r
+  1* select event, wait_class, sql_id from v$session where sid = 134
+
+EVENT                                                            WAIT_CLASS
+---------------------------------------------------------------- ----------------------------------------------------------------
+SQL_ID
+-------------
+db file sequential read                                          User I/O
+a87bp8vnpnckt
+
+
+sys@GLIMS> r
+  1* select event, wait_class, sql_id from v$session where sid = 134
+
+EVENT                                                            WAIT_CLASS
+---------------------------------------------------------------- ----------------------------------------------------------------
+SQL_ID
+-------------
+db file sequential read                                          User I/O
+a87bp8vnpnckt
+
+
+sys@GLIMS> select * from table(dbms_xplan.display_cursor('a87bp8vnpnckt'));
+
+PLAN_TABLE_OUTPUT
+----------------------------------------------------------------------------------------------------------------------------------
+SQL_ID  a87bp8vnpnckt, child number 0
+-------------------------------------
+SELECT /*+ INDEX_ASC(T1 RSLT_ID) */ T0.RSTI_ID
+unique_id_0,T0.RSTI_ACTION,T0.RSTI_RESULT,T1.RSLT_ID
+unique_id_1,T1.RSLT_ID,T1.RSLT_OBJECT,T1.RSLT_OBJECTTIME,T1.RSLT_SPECIME
+N,T1.RSLT_PROPERTY,T1.RSLT_PROPERTYOUTPUT,T1.RSLT_QCPOPULATION,T1.RSLT_R
+AWVALUE,T1.RSLT_RAWUNIT,T1.RSLT_COMPARATOR,T1.RSLT_MANTISSA,T1.RSLT_EXPO
+NENT,T1.RSLT_PROPERTYCHOICE,T1.RSLT_SEVERITY,T1.RSLT_STATUS,T1.RSLT_UNSO
+LICITED,T1.RSLT_PHONESTATUS,T1.RSLT_NEEDSMANUALVALIDATION,T1.RSLT_NORM,T
+1.RSLT_ALTERNATEUNITNORM,T1.RSLT_ORIGIN,T1.RSLT_CHANNELQUALITY,T1.RSLT_N
+ORMSEVERITY,T1.RSLT_DELTANORMSEVERITY,T1.RSLT_QCSEVERITY,T1.RSLT_STATION
+SEVERITY,T1.RSLT_MANUALSEVERITY,T1.RSLT_EXTERNALCOMMENT,T1.RSLT_INTERNAL
+COMMENT,T1.RSLT_AVAILABILITYUSER,T1.RSLT_AVAILABILITYTIME,T1.RSLT_CONFIR
+MATIONUSER,T1.RSLT_CONFIRMATIONTIME,T1.RSLT_VALIDATIONUSER,T1.RSLT_VALID
+ATIONTIME,T1.RSLT_REJECTIONUSER,T1.RSLT_REJECTIONTIME,T1.RSLT_REJECTIONR
+EASON,T1.RSLT_PREDECESSOR,T1.RSLT_ASSESSMENTCOUNT,T1.RSLT_CREATIONUSER,T
+1.RSLT_CREATIONTIME,T1.RSLT_LASTUPDA
+
+Plan hash value: 442047200
+
+-----------------------------------------------------------------------------------------------
+| Id  | Operation                       | Name        | Rows  | Bytes | Cost (%CPU)| Time     |
+-----------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT                |             |       |       |    11 (100)|          |
+|   1 |  SORT ORDER BY                  |             |     3 |   987 |    11  (10)| 00:00:01 |
+|*  2 |   FILTER                        |             |       |       |            |          |
+|   3 |    NESTED LOOPS                 |             |       |       |            |          |
+|   4 |     NESTED LOOPS                |             |     3 |   987 |    10   (0)| 00:00:01 |
+|   5 |      TABLE ACCESS BY INDEX ROWID| RESULTINPUT |     3 |    54 |     4   (0)| 00:00:01 |
+|*  6 |       INDEX RANGE SCAN          | RSTI_ACTION |     3 |       |     3   (0)| 00:00:01 |
+|*  7 |      INDEX UNIQUE SCAN          | RSLT_ID     |     1 |       |     1   (0)| 00:00:01 |
+|*  8 |     TABLE ACCESS BY INDEX ROWID | RESULT      |     1 |   311 |     2   (0)| 00:00:01 |
+-----------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter(TO_NUMBER(:2)<=TO_NUMBER(:3))
+   6 - access("T0"."RSTI_ACTION"=TO_NUMBER(:1))
+   7 - access("T0"."RSTI_RESULT"="T1"."RSLT_ID")
+   8 - filter(("T1"."RSLT_PROPERTY"=TO_NUMBER(:4) AND "T1"."RSLT_COMPARATOR" IS NULL
+              AND "T1"."RSLT_STATUS"<=TO_NUMBER(:3) AND "T1"."RSLT_STATUS">=TO_NUMBER(:2)))
+
+
+43 rows selected.
+
+sys@GLIMS> select sql_fulltext from v$sql where sql_id = 'a87bp8vnpnckt' and rownum = 1;
+
+SQL_FULLTEXT
+--------------------------------------------------------------------------------
+SELECT /*+ INDEX_ASC(T1 RSLT_ID) */ T0.RSTI_ID unique_id_0,T0.RSTI_ACTION,T0.RST
+I_RESULT,T1.RSLT_ID unique_id_1,T1.RSLT_ID,T1.RSLT_OBJECT,T1.RSLT_OBJECTTIME,T1.
+RSLT_SPECIMEN,T1.RSLT_PROPERTY,T1.RSLT_PROPERTYOUTPUT,T1.RSLT_QCPOPULATION,T1.RS
+LT_RAWVALUE,T1.RSLT_RAWUNIT,T1.RSLT_COMPARATOR,T1.RSLT_MANTISSA,T1.RSLT_EXPONENT
+,T1.RSLT_PROPERTYCHOICE,T1.RSLT_SEVERITY,T1.RSLT_STATUS,T1.RSLT_UNSOLICITED,T1.R
+SLT_PHONESTATUS,T1.RSLT_NEEDSMANUALVALIDATION,T1.RSLT_NORM,T1.RSLT_ALTERNATEUNIT
+NORM,T1.RSLT_ORIGIN,T1.RSLT_CHANNELQUALITY,T1.RSLT_NORMSEVERITY,T1.RSLT_DELTANOR
+MSEVERITY,T1.RSLT_QCSEVERITY,T1.RSLT_STATIONSEVERITY,T1.RSLT_MANUALSEVERITY,T1.R
+SLT_EXTERNALCOMMENT,T1.RSLT_INTERNALCOMMENT,T1.RSLT_AVAILABILITYUSER,T1.RSLT_AVA
+ILABILITYTIME,T1.RSLT_CONFIRMATIONUSER,T1.RSLT_CONFIRMATIONTIME,T1.RSLT_VALIDATI
+ONUSER,T1.RSLT_VALIDATIONTIME,T1.RSLT_REJECTIONUSER,T1.RSLT_REJECTIONTIME,T1.RSL
+T_REJECTIONREASON,T1.RSLT_PREDECESSOR,T1.RSLT_ASSESSMENTCOUNT,T1.RSLT_CREATIONUS
+ER,T1.RSLT_CREATIONTIME,T1.RSLT_LASTUPDATEUSER,T1.RSLT_LASTUPDATETIME,T1.RSLT_VE
+RSION,T1.RSLT_CONFIRMATIONMETHOD,T1.RSLT_VALIDATIONMETHOD,T1.RSLT_ORDER,T1.RSLT_
+HASDUPLICATE,T1.RSLT_URGENCY,T1.RSLT_HASREQUESTCOMMENT,T1.RSLT_ORIGINAL,T1.RSLT_
+ISDUPLICATE,T1.RSLT_LOG,T1.RSLT_FIRSTREPORTTIME,T1.RSLT_LASTREPORTTIME,T1.RSLT_D
+EPARTMENT,T1.RSLT_MODIFICATIONMETHOD,T1.RSLT_NEEDSMANUALCONFIRM,T1.RSLT_REFERENC
+ETIME,T1.RSLT_DYNAMICTYPE,T1.RSLT_RESTRICTEDVALIDATOR,T1.RSLT_EXPERTSYSTEMFLAGS,
+T1.RSLT_SHIFT,T1.RSLT_PHONEMARKMETHOD,T1.RSLT_METHOD,T1.RSLT_REQDILUTIONFACTOR,T
+1.RSLT_REQDILUTIONCONDITION,T1.RSLT_DILUTIONMODE,T1.RSLT_EFFDILUTIONCONDITION,T1
+.RSLT_EFFDILUTIONFACTOR,T1.RSLT_EXTERNALCOMMENTTIME FROM ORAGLIMS.RESULTINPUT  T
+0,ORAGLIMS.RESULT  T1 WHERE ((T0.RSTI_ACTION = :1 AND T0.RSTI_RESULT = T1.RSLT_I
+D AND T1.RSLT_STATUS >= :2 AND T1.RSLT_STATUS <= :3 AND T1.RSLT_PROPERTY = :4 AN
+D T1.RSLT_COMPARATOR IS NULL )) ORDER BY T0.RSTI_ACTION, T1.RSLT_ID
+
+select /*+ INDEX_ASC(t1 rslt_id) */ 
+       t0.rsti_id unique_id_0,t0.rsti_action,t0.rsti_result,t1.rslt_id unique_id_1,
+       t1.rslt_id,t1.rslt_object,t1.rslt_objecttime,t1.rslt_specimen,t1.rslt_property,t1.
+       rslt_propertyoutput,t1.rslt_qcpopulation,t1.rslt_rawvalue,t1.rslt_rawunit,
+       t1.rslt_comparator,t1.rslt_mantissa,t1.rslt_exponent,t1.rslt_propertychoice,
+       t1.rslt_severity,t1.rslt_status,t1.rslt_unsolicited,t1.rslt_phonestatus,
+       t1.rslt_needsmanualvalidation,t1.rslt_norm,t1.rslt_alternateunitnorm,t1.rslt_origin,
+       t1.rslt_channelquality,t1.rslt_normseverity,t1.rslt_deltanormseverity,t1.rslt_qcseverity,
+       t1.rslt_stationseverity,t1.rslt_manualseverity,t1.rslt_externalcomment,
+       t1.rslt_internalcomment,t1.rslt_availabilityuser,t1.rslt_availabilitytime,
+       t1.rslt_confirmationuser,t1.rslt_confirmationtime,t1.rslt_validationuser,
+       t1.rslt_validationtime,t1.rslt_rejectionuser,t1.rslt_rejectiontime,t1.rslt_rejectionreason,
+       t1.rslt_predecessor,t1.rslt_assessmentcount,t1.rslt_creationuser,t1.rslt_creationtime,
+       t1.rslt_lastupdateuser,t1.rslt_lastupdatetime,t1.rslt_version,t1.rslt_confirmationmethod,
+       t1.rslt_validationmethod,t1.rslt_order,t1.rslt_hasduplicate,t1.rslt_urgency,
+       t1.rslt_hasrequestcomment,t1.rslt_original,t1.rslt_isduplicate,t1.rslt_log,
+       t1.rslt_firstreporttime,t1.rslt_lastreporttime,t1.rslt_department,t1.rslt_modificationmethod,
+       t1.rslt_needsmanualconfirm,t1.rslt_referencetime,t1.rslt_dynamictype,t1.rslt_restrictedvalidator,
+       t1.rslt_expertsystemflags,t1.rslt_shift,t1.rslt_phonemarkmethod,t1.rslt_method,
+       t1.rslt_reqdilutionfactor,t1.rslt_reqdilutioncondition,t1.rslt_dilutionmode,
+       t1.rslt_effdilutioncondition,t1.rslt_effdilutionfactor,t1.rslt_externalcommenttime 
+from oraglims.resultinput  t0,oraglims.result  t1 
+     where (( t0.rsti_action = :1 
+              and t0.rsti_result = t1.rslt_id 
+              and t1.rslt_status >= :2 
+              and t1.rslt_status <= :3 
+              and t1.rslt_property = :4 
+              and t1.rslt_comparator is null 
+            )
+           )
+order by t0.rsti_action, t1.rslt_id
+

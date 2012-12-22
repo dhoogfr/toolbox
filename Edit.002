@@ -1,0 +1,65 @@
+
+--MET HINT
+
+PLAN_TABLE_OUTPUT
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Plan hash value: 442047200
+
+-----------------------------------------------------------------------------------------------
+| Id  | Operation                       | Name        | Rows  | Bytes | Cost (%CPU)| Time     |
+-----------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT                |             |     3 |   987 |    11  (10)| 00:00:01 |
+|   1 |  SORT ORDER BY                  |             |     3 |   987 |    11  (10)| 00:00:01 |
+|*  2 |   FILTER                        |             |       |       |            |          |
+|   3 |    NESTED LOOPS                 |             |       |       |            |          |
+|   4 |     NESTED LOOPS                |             |     3 |   987 |    10   (0)| 00:00:01 |
+|   5 |      TABLE ACCESS BY INDEX ROWID| RESULTINPUT |     3 |    54 |     4   (0)| 00:00:01 |
+|*  6 |       INDEX RANGE SCAN          | RSTI_ACTION |     3 |       |     3   (0)| 00:00:01 |
+|*  7 |      INDEX UNIQUE SCAN          | RSLT_ID     |     1 |       |     1   (0)| 00:00:01 |
+|*  8 |     TABLE ACCESS BY INDEX ROWID | RESULT      |     1 |   311 |     2   (0)| 00:00:01 |
+-----------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter(TO_NUMBER(:2)<=TO_NUMBER(:3))
+   6 - access("T0"."RSTI_ACTION"=TO_NUMBER(:1))
+   7 - access("T0"."RSTI_RESULT"="T1"."RSLT_ID")
+   8 - filter("T1"."RSLT_PROPERTY"=TO_NUMBER(:4) AND "T1"."RSLT_STATUS">=TO_NUMBER(:2)
+              AND "T1"."RSLT_STATUS"<=TO_NUMBER(:3) AND "T1"."RSLT_COMPARATOR" IS NULL)
+
+24 rows selected.
+
+--ZONDER HINT
+
+PLAN_TABLE_OUTPUT
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Plan hash value: 442047200
+
+-----------------------------------------------------------------------------------------------
+| Id  | Operation                       | Name        | Rows  | Bytes | Cost (%CPU)| Time     |
+-----------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT                |             |     3 |   987 |    11  (10)| 00:00:01 |
+|   1 |  SORT ORDER BY                  |             |     3 |   987 |    11  (10)| 00:00:01 |
+|*  2 |   FILTER                        |             |       |       |            |          |
+|   3 |    NESTED LOOPS                 |             |       |       |            |          |
+|   4 |     NESTED LOOPS                |             |     3 |   987 |    10   (0)| 00:00:01 |
+|   5 |      TABLE ACCESS BY INDEX ROWID| RESULTINPUT |     3 |    54 |     4   (0)| 00:00:01 |
+|*  6 |       INDEX RANGE SCAN          | RSTI_ACTION |     3 |       |     3   (0)| 00:00:01 |
+|*  7 |      INDEX UNIQUE SCAN          | RSLT_ID     |     1 |       |     1   (0)| 00:00:01 |
+|*  8 |     TABLE ACCESS BY INDEX ROWID | RESULT      |     1 |   311 |     2   (0)| 00:00:01 |
+-----------------------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter(TO_NUMBER(:2)<=TO_NUMBER(:3))
+   6 - access("T0"."RSTI_ACTION"=TO_NUMBER(:1))
+   7 - access("T0"."RSTI_RESULT"="T1"."RSLT_ID")
+   8 - filter("T1"."RSLT_PROPERTY"=TO_NUMBER(:4) AND "T1"."RSLT_STATUS">=TO_NUMBER(:2)
+              AND "T1"."RSLT_STATUS"<=TO_NUMBER(:3) AND "T1"."RSLT_COMPARATOR" IS NULL)
+
+24 rows selected.
+

@@ -1,0 +1,166 @@
+rem
+rem   Script:           c_mystats.sql
+rem   Author:           Jonathan Lewis
+rem   Dated:            March 2001
+rem   Purpose:          Put names to v$mystat
+rem
+rem   Note:
+rem   Should be run by SYS - which means it has to be re-run
+rem   on a full database export/import
+rem
+rem   Use first_rows and ordered to avoid a sort/merge join, and
+rem   to allow faster elimination of the 'value = 0' rows.
+rem
+
+create or replace view v$my_stats
+as
+select
+      /*+
+            first_rows
+            ordered
+      */
+      sn.statistic#,
+      sn.name,
+      sn.class,
+      ms.value
+from
+      v$mystat    ms,
+      v$statname  sn
+where
+      sn.statistic# = ms.statistic#
+;
+
+drop public synonym v$my_stats;
+create public synonym v$my_stats for v$my_stats;
+grant select on v$my_stats to public;
+
+
+rem
+rem     Script:        snap_myst.sql
+rem     Author:        Jonathan Lewis
+rem     Dated:         March 2001
+rem     Purpose:               Package to get snapshot start and delta of v$mystat
+rem
+rem     Notes
+rem     Has to be run by SYS to create the package
+rem     Depends on view v$my_stats (see c_my_stats.sql)
+rem
+rem     Usage:
+rem            set serveroutput on size 1000000 format wrapped
+rem            set linesize 120
+rem            set trimspool on
+rem            execute snap_my_stats.start_snap
+rem            -- do something
+rem            execute snap_my_stats.end_snap
+rem 
+
+create or replace package snap_my_stats as
+        procedure start_snap;
+        procedure end_snap;
+end;
+/
+ 
+create or replace package body snap_my_stats as
+ 
+cursor c1 is
+        select
+               statistic#,
+               name,
+               value
+        from
+               v$my_stats
+        where
+               value != 0
+        ;
+        
+        type w_type is table of c1%rowtype index by binary_integer;
+        w_list w_type;
+        m_start_time   date;
+        m_start_flag   char(1);
+        m_end_time     date;
+ 
+procedure start_snap is
+begin
+
+        m_start_time := sysdate;
+        m_start_flag := 'U';
+
+        for r in c1 loop
+               w_list(r.statistic#).value := r.value;
+        end loop; 
+
+end start_snap;
+
+procedure end_snap is
+begin
+
+        m_end_time := sysdate;
+
+        dbms_output.put_line('---------------------------------');
+        dbms_output.put_line('Session stats - ' ||
+                               to_char(m_end_time,'dd-Mon hh24:mi:ss')
+        );
+
+        if m_start_flag = 'U' then
+               dbms_output.put_line('Interval:-  '  ||
+                               trunc(86400 * (m_end_time - m_start_time)) ||
+                               ' seconds'
+               );
+        else
+               dbms_output.put_line('Since Startup:- ' ||
+                               to_char(m_start_time,'dd-Mon hh24:mi:ss')
+               );
+        end if; 
+
+        dbms_output.put_line('---------------------------------'); 
+
+        dbms_output.put_line(
+               rpad('Name',60) ||
+               lpad('Value',18)
+        );
+
+        dbms_output.put_line(
+               rpad('----',60) ||
+               lpad('-----',18)
+        );
+
+        for r in c1 loop
+               if (not w_list.exists(r.statistic#)) then
+                   w_list(r.statistic#).value := 0;
+               end if;
+
+               if (
+                      (w_list(r.statistic#).value != r.value)
+               ) then
+                       dbms_output.put(rpad(r.name,60));
+                       dbms_output.put(to_char(
+                               r.value - w_list(r.statistic#).value,
+                                      '9,999,999,999,990')
+                       );
+                       dbms_output.new_line;
+               end if;
+        end loop;
+ 
+end end_snap;
+
+--
+--      Instantiation code - get system startup time just
+--      in case the user wants stats since session started
+--
+
+begin
+        select
+               logon_time, 'S'
+        into
+               m_start_time, m_start_flag
+        from
+               v$session
+        where
+               sid =   (
+                               select /*+ no_unnest */ sid
+                               from v$mystat
+                               where rownum = 1
+                       );
+
+end snap_my_stats;
+/

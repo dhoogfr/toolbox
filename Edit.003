@@ -1,0 +1,3 @@
+  select to_number(substr(banner,instr(banner,'Release')+8,instr(banner,'.',1,2)-8-instr(banner,'Release')),'', 'NLS_NUMERIC_CHARACTERS = ''.,''')*10
+	from   V$VERSION
+	where  banner like 'Oracle%' and rownum < 2;

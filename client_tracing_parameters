@@ -1,0 +1,3 @@
+tracle_level_client = admin
+trace_unique_client = on
+trace_timestamp_client = on

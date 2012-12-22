@@ -1,0 +1,5 @@
+tracle_level_client = admin
+trace_unique_client = on
+trace_timestamp_client = on
+trace_file_client = cli
+trace_directory_client = E:\oracle\OraHome\network\trace

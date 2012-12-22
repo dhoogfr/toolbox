@@ -1,0 +1,1 @@
+for i in `ps -ef | grep pmon | grep -v grep | cut -d'_' -f3`; do export ORACLE_SID=$i; export ORACLE_UNQNAME=`echo $i | tr -d [:digit:]`; emctl start dbconsole; done
