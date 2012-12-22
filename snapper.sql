@@ -1,16 +1,16 @@
 --------------------------------------------------------------------------------
 --
 -- File name:   snapper.sql
--- Purpose:     An easy to use Oracle session-level performance snapshot utility
---
---              NB! This script does NOT require creation of any database objects!
+-- Purpose:     An easy to use Oracle session-level performance measurement tool
+--              which does NOT require any database changes nor creation of any
+--              database objects!
 --
 --              This is very useful for ad-hoc performance diagnosis in environments
 --              with restrictive change management processes, where creating
 --              even temporary tables and PL/SQL packages is not allowed or would
 --              take too much time to get approved.
 --
---              All processing is done by few sqlplus commands and an anonymous
+--              All processing is done by a few sqlplus commands and an anonymous
 --              PL/SQL block, all that's needed is SQLPLUS access (and if you want
 --              to output data to server-side tracefile then execute rights on
 --              DBMS_SYSTEM).
@@ -21,9 +21,17 @@
 --              As of version 3.5, Snapper works on Oracle versions starting from
 --              Oracle 9.2
 --
+-- Note1:       The "ASH" functionality in Snapper just samples V$SESSION view,
+--              so you do NOT need Diagnostics Pack licenses to use Snapper's
+--              "ASH" output
+--
+-- Note2:       Snapper just reports you performance metric deltas in a snapsphot
+--              and does not attempt to solve any performance problems for you.
+--              You still need to interpret and understand these standard Oracle
+--              metrics yourself
 --
 -- Author:      Tanel Poder
--- Copyright:   (c) E2SN - http://www.e2sn.com - All rights reserved.
+-- Copyright:   (c) Tanel Poder - http://blog.tanelpoder.com - All rights reserved.
 --
 --
 -- Thanks to:   Adrian Billington, Jamey Johnston and Marcus Mönnig for bugfixes,
@@ -31,8 +39,8 @@
 --
 --------------------------------------------------------------------------------
 --
---   The Session Snapper v3.52
---   (c) Tanel Poder ( http://www.e2sn.com )
+--   The Session Snapper v3.61
+--   (c) Tanel Poder ( http://blog.tanelpoder.com )
 --
 --
 --    +-----=====O=== Welcome to The Session Snapper! (Yes, you are looking at a cheap ASCII
@@ -80,8 +88,8 @@
 --                   - the above example illustrates that you can also specify the v$session
 --                     columns for TOP report yourself. The above example will show a TOP
 --                     activity report grouped by SQL_ID + EVENT + WAIT_CLASS
---                     Note that the columns are separated by + (as comma is a snapper parameter
---                     separator, not column separator)
+--                     Note that the columns are separated by a "+" sign (as comma is a snapper 
+--                     parameter separator, not ASH column separator)
 --
 --          ash1
 --          ash2
@@ -94,7 +102,7 @@
 --          all      - report both ASH and stats sections
 --
 --          out      - use dbms_output.put_line() for output. output will be seen only when
---                     Snapper run completes due dbms_output limitations. This is the default.
+--                     Snapper run completes due to dbms_output limitations. This is the default.
 --          trace    - write output to server process tracefile
 --                     (you must have execute permission on sys.dbms_system.ksdwrt() for that,
 --                      you can use both out and trace parameters together if you like )
@@ -217,7 +225,7 @@
 --
 --------------------------------------------------------------------------------
 
-set termout off tab off verify off linesize 299
+set termout off tab off verify off linesize 999 trimspool on trimout on null ""
 
 
 -- Get parameters
@@ -227,7 +235,7 @@ define   snapper_count="&3"
 define     snapper_sid="&4"
 
 
--- The following code is required for making this script "dynamic" as due
+-- The following code is required for making this script "dynamic" as due to
 -- different Oracle versions, script parameters or granted privileges some
 -- statements might not compile if not adjusted properly.
 
@@ -357,9 +365,9 @@ with mod_banner as (
 select
     decode(substr(banner, instr(banner, 'Release ')+8,2), '09', '--', '') snapper_ora10lower,
     decode(substr(banner, instr(banner, 'Release ')+8,2), '09', '',  '--') snapper_ora9,
-    decode(substr(banner, instr(banner, 'Release ')+8,1), '1',  '',  '--')  snapper_ora10higher,
-    decode(substr(banner, instr(banner, 'Release ')+8,2), '11', '',  '--')  snapper_ora11higher,
-    decode(substr(banner, instr(banner, 'Release ')+8,2), '11', '--',  '')  snapper_ora11lower,
+    decode(substr(banner, instr(banner, 'Release ')+8,1), '1',  '',  '--') snapper_ora10higher,
+    CASE WHEN substr(banner, instr(banner, 'Release ')+8,2) >= '11' THEN '' ELSE '--' END snapper_ora11higher,
+    CASE WHEN substr(banner, instr(banner, 'Release ')+8,2) < '11' THEN '' ELSE '--' END snapper_ora11lower,
     nvl(:v, '/* dbms_system is not accessible') dbms_system_accessible,
     nvl(:x, '--') x_accessible,
     case when substr( banner, instr(banner, 'Release ')+8, instr(substr(banner,instr(banner,'Release ')+8),' ') ) >= '10.2'     then ''   else '--' end yes_blk_inst,
@@ -402,7 +410,7 @@ declare
     -- trick for holding 32bit UNSIGNED event and stat_ids in 32bit SIGNED PLS_INTEGER
     pls_adjust constant number(10,0) := power(2,31) - 1;
 
-    type srec is record (stype varchar2(4), sid number, statistic# number, value number );
+    type srec is record (stype varchar2(4), sid number, statistic# number, value number, event_count number );
     type stab is table of srec index by pls_integer;
     s1 stab;
     s2 stab;
@@ -510,11 +518,13 @@ declare
 
     c number;
     delta number;
+    evcnt number;
     changed_values number;
     pagesize number:=99999999999999;
     missing_values_s1 number := 0;
     missing_values_s2 number := 0;
     disappeared_sid   number := 0;
+    lv_curr_sid       number := 0; -- used for determining whether to print an empty line between session stats
     d1 date;
     d2 date;
     ash_date1 date;
@@ -535,7 +545,7 @@ declare
         -- this sets what are the default ash sample TOP reporting group by columns
 
             	
-&_IF_ORA10_OR_HIGHER        g_ash_columns     varchar2(1000) := 'sql_id + event + wait_class';
+&_IF_ORA10_OR_HIGHER        g_ash_columns     varchar2(1000) := 'sql_id + sql_child_number + event + wait_class';
 &_IF_ORA10_OR_HIGHER        g_ash_columns1    varchar2(1000) := 'event + wait_class';
 &_IF_ORA10_OR_HIGHER        g_ash_columns2    varchar2(1000) := 'sid + sql_id';
 &_IF_ORA10_OR_HIGHER        g_ash_columns3    varchar2(1000) := 'plsql_object_id + plsql_subprogram_id + sql_id';
@@ -545,21 +555,24 @@ declare
 &_IF_ORA9                   g_ash_columns2    varchar2(1000) := 'sid + sql_hash_value';
 &_IF_ORA9                   g_ash_columns3    varchar2(1000) := 'plsql_object_id + plsql_subprogram_id + sql_hash_value';
 
-        -- output column configuration
-        output_header   number := 0; -- 1=true 0=false
-        output_username number := 1; -- v$session.username
-        output_sid      number := 1; -- sid
-        output_time     number := 0; -- time of snapshot start
-        output_seconds  number := 0; -- seconds in snapshot (shown in footer of each snapshot too)
-        output_stype    number := 1; -- statistic type (WAIT,STAT,TIME,ENQG,LATG,...)
-        output_sname    number := 1; -- statistic name
-        output_delta    number := 0; -- raw delta
-        output_delta_s  number := 0; -- raw delta normalized to per second
-        output_hdelta   number := 1; -- human readable delta
-        output_hdelta_s number := 1; -- human readable delta normalized to per second
-        output_percent  number := 1; -- percent of total time/samples
-&_IF_ORA9206_OR_LOWER        output_pcthist  number := 0; -- percent of total visual bar (histogram) -- 9.2.0.6 or lower - does not work - jbj2
-&_IF_ORA9207_OR_HIGHER       output_pcthist  number := 1; -- percent of total visual bar (histogram) -- Histograms seem to work for me on 9.2.0.7 + - JBJ2)
+                            -- output column configuration
+                            output_header     number := 0; -- 1=true 0=false
+                            output_username   number := 1; -- v$session.username
+                            output_sid        number := 1; -- sid
+                            output_time       number := 0; -- time of snapshot start
+                            output_seconds    number := 0; -- seconds in snapshot (shown in footer of each snapshot too)
+                            output_stype      number := 1; -- statistic type (WAIT,STAT,TIME,ENQG,LATG,...)
+                            output_sname      number := 1; -- statistic name
+                            output_delta      number := 1; -- raw delta
+                            output_delta_s    number := 0; -- raw delta normalized to per second
+                            output_hdelta     number := 0; -- human readable delta
+                            output_hdelta_s   number := 1; -- human readable delta normalized to per second
+                            output_percent    number := 1; -- percent of total time/samples
+                            output_eventcnt   number := 1; -- wait event count
+                            output_eventcnt_s number := 1; -- wait event count
+                            output_eventavg   number := 1; -- average wait duration
+&_IF_ORA9206_OR_LOWER       output_pcthist    number := 0; -- percent of total visual bar (histogram) -- 9.2.0.6 or lower - does not work - jbj2
+&_IF_ORA9207_OR_HIGHER      output_pcthist    number := 1; -- percent of total visual bar (histogram) -- Histograms seem to work for me on 9.2.0.7 + - JBJ2)
 
         -- column widths in ASH report output
         w_sid                         number :=  6;
@@ -567,7 +580,7 @@ declare
         w_machine                     number := 20;
         w_terminal                    number := 20;
         w_program                     number := 25;
-        w_event                       number := 25;
+        w_event                       number := 35;
         w_wait_class                  number := 15;
         w_state                       number :=  8;
         w_p1                          number := 20;
@@ -582,7 +595,7 @@ declare
         w_blocking_session            number := 12;
         w_sql_hash_value              number := 12;
         w_sql_id                      number := 15;
-        w_sql_child_number            number := 10;
+        w_sql_child_number            number :=  9;
         w_plsql_entry_object_id       number := 10;
         w_plsql_entry_subprogram_id   number := 10;
         w_plsql_object_id             number := 10;
@@ -703,19 +716,22 @@ declare
                 when others then raise;
             end;
         end if;
-        output( CASE WHEN output_header   = 1 THEN 'SID= ' END
-             || CASE WHEN output_sid      = 1 THEN to_char(s2(b).sid,'999999')||', ' END
-             || CASE WHEN output_username = 1 THEN rpad(CASE s2(b).sid WHEN -1 THEN ' ' ELSE NVL(l_output_username, ' ') END, 10)||', ' END
-             || CASE WHEN output_time     = 1 THEN to_char(d1, 'YYYYMMDD HH24:MI:SS')||', ' END
-             || CASE WHEN output_seconds  = 1 THEN to_char(case (d2-d1) when 0 then &snapper_sleep else (d2-d1) * 86400 end, '9999999')||', ' END
-             || CASE WHEN output_stype    = 1 THEN s2(b).stype||', ' END
-             || CASE WHEN output_sname    = 1 THEN rpad(sn(s2(b).statistic#).name, 58, ' ')||', ' END
-             || CASE WHEN output_delta    = 1 THEN to_char(delta, '999999999999')||', ' END
-             || CASE WHEN output_delta_s  = 1 THEN to_char(delta/(case (d2-d1) when 0 then &snapper_sleep else (d2-d1) * 86400 end),'999999999')||', ' END
-             || CASE WHEN output_hdelta   = 1 THEN lpad(tptformat(delta, s2(b).stype), 10, ' ')||', ' END
-             || CASE WHEN output_hdelta_s = 1 THEN lpad(tptformat(delta/(case (d2-d1) when 0 then &snapper_sleep else (d2-d1)* 86400 end ), s2(b).stype), 10, ' ')||', ' END
-             || CASE WHEN output_percent  = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT') THEN to_char(delta/CASE (d2-d1) WHEN 0 THEN &snapper_sleep ELSE (d2-d1) * 86400 END / 10000, '9999.9')||'%,' END END
-             || CASE WHEN output_pcthist  = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT') THEN rpad(' '||rpad('|', ceil(round(delta/CASE (d2-d1) WHEN 0 THEN &snapper_sleep ELSE (d2-d1) * 86400 END / 100000,1))+1, '@'),12,' ')||'|' END END
+        output( CASE WHEN output_header      = 1 THEN 'SID= ' END
+             || CASE WHEN output_sid         = 1 THEN to_char(s2(b).sid,'999999')||', ' END
+             || CASE WHEN output_username    = 1 THEN rpad(CASE s2(b).sid WHEN -1 THEN ' ' ELSE NVL(l_output_username, ' ') END, 10)||', ' END
+             || CASE WHEN output_time        = 1 THEN to_char(d1, 'YYYYMMDD HH24:MI:SS')||', ' END
+             || CASE WHEN output_seconds     = 1 THEN to_char(case (d2-d1) when 0 then &snapper_sleep else (d2-d1) * 86400 end, '9999999')||', ' END
+             || CASE WHEN output_stype       = 1 THEN s2(b).stype||', ' END
+             || CASE WHEN output_sname       = 1 THEN rpad(sn(s2(b).statistic#).name, 58, ' ')||', ' END
+             || CASE WHEN output_delta       = 1 THEN to_char(delta, '999999999999')||', ' END
+             || CASE WHEN output_delta_s     = 1 THEN to_char(delta/(case (d2-d1) when 0 then &snapper_sleep else (d2-d1) * 86400 end),'999999999')||', ' END
+             || CASE WHEN output_hdelta      = 1 THEN lpad(tptformat(delta, s2(b).stype), 10, ' ')||', ' END
+             || CASE WHEN output_hdelta_s    = 1 THEN lpad(tptformat(delta/(case (d2-d1) when 0 then &snapper_sleep else (d2-d1)* 86400 end ), s2(b).stype), 10, ' ')||', ' END
+             || CASE WHEN output_percent     = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT') THEN to_char(delta/CASE (d2-d1) WHEN 0 THEN &snapper_sleep ELSE (d2-d1) * 86400 END / 10000, '9999.9')||'%' ELSE '        ' END END||', '
+             || CASE WHEN output_pcthist     = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT') THEN rpad(rpad('[', ceil(round(delta/CASE (d2-d1) WHEN 0 THEN &snapper_sleep ELSE (d2-d1) * 86400 END / 100000,1))+1, CASE WHEN s2(b).stype IN ('WAIT') THEN 'W' WHEN sn(s2(b).statistic#).name = 'DB CPU' THEN '@' ELSE '#' END),11,' ')||']' ELSE '            ' END END||', '
+             || CASE WHEN output_eventcnt    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN to_char(evcnt, '99999999') ELSE '         ' END END||', '
+             || CASE WHEN output_eventcnt_s  = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat((evcnt / case (d2-d1) when 0 then &snapper_sleep else (d2-d1)* 86400 end ), 'STAT' ), 10, ' ') ELSE '          ' END END||', '
+             || CASE WHEN output_eventavg    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat(delta / CASE WHEN evcnt = 0 THEN 1 ELSE evcnt END, s2(b).stype), 10, ' ') ELSE '            ' END END
         );
 
     end;
@@ -732,6 +748,7 @@ declare
                       return varchar2
     is
     begin
+        if p_num = 0 then return '0'; end if;
 
         if p_stype in ('WAIT','TIME') then
 
@@ -900,7 +917,7 @@ declare
 &_IF_ORA9              v$session s, v$session_wait sw, v$bgprocess bg, v$process p
 &_IF_ORA10_OR_HIGHER   v$session
                      where
-&_IF_ORA9              s.sid in (&snapper_sid) and s.sid=sw.sid and s.paddr = bg.paddr(+);
+&_IF_ORA9              s.sid in (&snapper_sid) and s.sid=sw.sid and p.addr = s.paddr and s.paddr = bg.paddr(+);
 &_IF_ORA10_OR_HIGHER     sid in (&snapper_sid);
 
        g_sessions := g_empty_sessions;
@@ -1140,48 +1157,48 @@ declare
 
              g_ash.extend;
 
-             -- max length 1000 bytes (due dbms_debug_vc2coll)
+             -- max length 1000 bytes (due to dbms_debug_vc2coll)
              g_ash(g_ash.count) := substr(
-                            sitem(s.sid)                    --  1
-                          ||sitem(s.username)               --  2  -- 30 bytes
-                          ||sitem(s.machine)                --  3  -- 64 bytes
-                          ||sitem(s.terminal)               --  4  -- 30 bytes
-                          ||sitem(s.program)                --  5  -- 48 bytes
-                          ||sitem(s.event)                  --  6  -- 64 bytes
-   &_IF_ORA10_OR_HIGHER   ||sitem(s.wait_class)             --  7  -- 64 bytes, 10g+
-   &_IF_ORA9              ||sitem('N/A')                    --  7
-                          ||sitem(s.state)                  --  8 
-                          ||sitem(s.p1)                     --  9
-                          ||sitem(s.p2)                     -- 10
-                          ||sitem(s.p3)                     -- 11
-                          ||sitem(s.row_wait_obj#)          -- 12
-                          ||sitem(s.row_wait_file#)         -- 13
-                          ||sitem(s.row_wait_block#)        -- 14
-                          ||sitem(s.row_wait_row#)          -- 15
-   &_IF_ORA10_OR_HIGHER   ||sitem(s.blocking_session_status)-- 16   -- 10g+
-   &_IF_ORA9              ||sitem('N/A')                    -- 16   -- 10g+                    -- 16    
-           &_NO_BLK_INST  ||sitem('N/A')                    -- 17   -- 10gR2+
-          &_YES_BLK_INST  ||sitem(s.blocking_instance)      -- 17   -- 10gR2+
-   &_IF_ORA10_OR_HIGHER   ||sitem(s.blocking_session)       -- 18   -- 10g+
-   &_IF_ORA9              ||sitem('N/A')                    -- 18   -- 10g+   
-                          ||sitem(s.sql_hash_value)         -- 19
-   &_IF_ORA10_OR_HIGHER   ||sitem(s.sql_id)                 -- 20   -- 10g+
-   &_IF_ORA9              ||sitem(to_char(s.sql_hash_value)) -- 20   -- 9i, let's just put hash_value into sql_id
-   &_IF_ORA10_OR_HIGHER   ||sitem(s.sql_child_number)       -- 21   -- 10g+
-   &_IF_ORA9              ||sitem('N/A')                    -- 21   -- 10g+
-      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                    -- 22
-      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                    -- 23
-      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                    -- 24
-      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                    -- 25
-     &_YES_PLSQL_OBJ_ID   ||sitem(s.plsql_entry_object_id)  -- 22
+                            sitem(s.sid)                       --  1
+                          ||sitem(s.username)                  --  2  -- 30 bytes
+                          ||sitem(s.machine)                   --  3  -- 64 bytes
+                          ||sitem(s.terminal)                  --  4  -- 30 bytes
+                          ||sitem(s.program)                   --  5  -- 48 bytes
+                          ||sitem(s.event)                     --  6  -- 64 bytes
+   &_IF_ORA10_OR_HIGHER   ||sitem(s.wait_class)                --  7  -- 64 bytes, 10g+
+   &_IF_ORA9              ||sitem('N/A')                       --  7
+                          ||sitem(s.state)                     --  8 
+                          ||sitem(s.p1)                        --  9
+                          ||sitem(s.p2)                        -- 10
+                          ||sitem(s.p3)                        -- 11
+                          ||sitem(s.row_wait_obj#)             -- 12
+                          ||sitem(s.row_wait_file#)            -- 13
+                          ||sitem(s.row_wait_block#)           -- 14
+                          ||sitem(s.row_wait_row#)             -- 15
+   &_IF_ORA10_OR_HIGHER   ||sitem(s.blocking_session_status)   -- 16   -- 10g+
+   &_IF_ORA9              ||sitem('N/A')                       -- 16   -- 10g+                    -- 16    
+           &_NO_BLK_INST  ||sitem('N/A')                       -- 17   -- 10gR2+
+          &_YES_BLK_INST  ||sitem(s.blocking_instance)         -- 17   -- 10gR2+
+   &_IF_ORA10_OR_HIGHER   ||sitem(s.blocking_session)          -- 18   -- 10g+
+   &_IF_ORA9              ||sitem('N/A')                       -- 18   -- 10g+   
+                          ||sitem(s.sql_hash_value)            -- 19
+   &_IF_ORA10_OR_HIGHER   ||sitem(s.sql_id)                    -- 20   -- 10g+
+   &_IF_ORA9              ||sitem(to_char(s.sql_hash_value))   -- 20   -- 9i, let's just put hash_value into sql_id
+   &_IF_ORA10_OR_HIGHER   ||sitem(s.sql_child_number)          -- 21   -- 10g+
+   &_IF_ORA9              ||sitem('N/A')                       -- 21   -- 10g+
+      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                       -- 22
+      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                       -- 23
+      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                       -- 24
+      &_NO_PLSQL_OBJ_ID   ||sitem('N/A')                       -- 25
+     &_YES_PLSQL_OBJ_ID   ||sitem(s.plsql_entry_object_id)     -- 22
      &_YES_PLSQL_OBJ_ID   ||sitem(s.plsql_entry_subprogram_id) -- 23
-     &_YES_PLSQL_OBJ_ID   ||sitem(s.plsql_object_id)        -- 24
-     &_YES_PLSQL_OBJ_ID   ||sitem(s.plsql_subprogram_id)    -- 25
-                          ||sitem(s.module)                 -- 26  -- 48 bytes
-                          ||sitem(s.action)                 -- 27  -- 32 bytes
-                          ||sitem(s.client_identifier)      -- 28  -- 64 bytes
-   &_IF_ORA10_OR_HIGHER   ||sitem(s.service_name)           -- 29  -- 64 bytes, 10g+
-   &_IF_ORA9              ||sitem('N/A')                    -- 29
+     &_YES_PLSQL_OBJ_ID   ||sitem(s.plsql_object_id)           -- 24
+     &_YES_PLSQL_OBJ_ID   ||sitem(s.plsql_subprogram_id)       -- 25
+                          ||sitem(s.module)                    -- 26  -- 48 bytes
+                          ||sitem(s.action)                    -- 27  -- 32 bytes
+                          ||sitem(s.client_identifier)         -- 28  -- 64 bytes
+   &_IF_ORA10_OR_HIGHER   ||sitem(s.service_name)              -- 29  -- 64 bytes, 10g+
+   &_IF_ORA9              ||sitem('N/A')                       -- 29
                     , 1, 1000);
              
           end if; -- sample is of an active session
@@ -1213,7 +1230,7 @@ declare
         select *
         bulk collect into p_stats
         from (
-                                         select 'STAT' stype, sid, statistic# - pls_adjust statistic#, value
+                                         select 'STAT' stype, sid, statistic# - pls_adjust statistic#, value, null event_count
                                          from v$sesstat
                                          where sid in (&snapper_sid)
                                          and  (lv_gather like '%s%' or lv_gather like '%a%')
@@ -1226,7 +1243,7 @@ declare
                                          select
                                                 'WAIT', sw.sid,
                                                 en.event# + (select count(*) from v$statname) + 1 - pls_adjust,
-                                                nvl(se.time_waited_micro,0) + ( decode(se.event||sw.state, sw.event||'WAITING', sw.seconds_in_wait, 0) * 1000000 ) value
+                                                nvl(se.time_waited_micro,0) + ( decode(se.event||sw.state, sw.event||'WAITING', sw.seconds_in_wait, 0) * 1000000 ) value, total_waits event_count
                                          from v$session_wait sw, v$session_event se, v$event_name en
                                          where sw.sid = se.sid
                                          and   se.event = en.name
@@ -1238,7 +1255,7 @@ declare
                                                            )
                                          --
                     &_IF_ORA10_OR_HIGHER union all
-                    &_IF_ORA10_OR_HIGHER select 'TIME' stype, sid, stat_id - pls_adjust statistic#, value
+                    &_IF_ORA10_OR_HIGHER select 'TIME' stype, sid, stat_id - pls_adjust statistic#, value, null event_count
                     &_IF_ORA10_OR_HIGHER from v$sess_time_model
                     &_IF_ORA10_OR_HIGHER where sid in (&snapper_sid)
                     &_IF_ORA10_OR_HIGHER and   (lv_gather like '%t%' or lv_gather like '%a%')
@@ -1253,7 +1270,7 @@ declare
                                                    (select count(*) from v$statname) +
                                                    (select count(*) from v$event_name) +
                                                    1 - pls_adjust statistic#,
-                                               l.gets + l.immediate_gets value
+                                               l.gets + l.immediate_gets value, null event_count
                                          from v$latch l
                                          where
                                              (lv_gather like '%l%' or lv_gather like '%a%')
@@ -1269,7 +1286,7 @@ declare
   &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11           (select count(*) from v$event_name) +
   &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11           (select count(*) from v$latch) +
   &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11           1 - pls_adjust statistic#,
-  &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11       s.why0+s.why1+s.why2 value
+  &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11       s.why0+s.why1+s.why2 value, null event_count
   &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11 from x$kcbsw s, x$kcbwh w
   &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11 where
   &_IF_X_ACCESSIBLE &_IF_LOWER_THAN_ORA11       s.indx = w.indx
@@ -1283,7 +1300,7 @@ declare
   &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER            (select count(*) from v$event_name) +
   &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER            (select count(*) from v$latch) +
   &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER            1 - pls_adjust statistic#,
-  &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER        why.why0+why.why1+why.why2+sw.other_wait value
+  &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER        why.why0+why.why1+why.why2+sw.other_wait value, null event_count
   &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER  from
   &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER        x$kcbuwhy why,
   &_IF_X_ACCESSIBLE &_IF_ORA11_OR_HIGHER        x$kcbwh       dsc,
@@ -1304,7 +1321,7 @@ declare
                                                    (select count(*) from v$latch) +
   &_IF_X_ACCESSIBLE                                (select count(*) from x$kcbwh) +
                                                    1 - pls_adjust statistic#,
-                                               e.total_req# value
+                                               e.total_req# value, null event_count
                                          from v$enqueue_stat e
                                          where
                                                (lv_gather like '%e%' or lv_gather like '%a%')
@@ -1736,7 +1753,7 @@ begin
     --output('all='||case when getopt('&snapper_options', 'all') = chr(0) then 'chr(0)' when getopt('&snapper_options', 'all') is null then 'null' else (getopt('&snapper_options','all')) end);
     -- some additional default value logic
     if getopt('&snapper_options', 'all') is not null then
-        output('setting stats to all due option = all');
+        --output('setting stats to all due to option = all');
         gather_stats := 1;
         gather_ash   := 1;
     else 
@@ -1759,7 +1776,7 @@ begin
 
     if pagesize > 0 then
         output(' ');
-        output('-- Session Snapper v3.52 by Tanel Poder @ E2SN ( http://tech.e2sn.com )');
+        output('-- Session Snapper v3.61 by Tanel Poder ( http://blog.tanelpoder.com )');
         output(' ');
     end if;
 
@@ -1844,19 +1861,22 @@ begin
 
             -- print header if required
             gv_header_string :=
-                      CASE WHEN output_header   = 1 THEN 'HEAD,'                        END
-                   || CASE WHEN output_sid      = 1 THEN '    SID,'                     END
-                   || CASE WHEN output_username = 1 THEN ' USERNAME  ,'                 END
-                   || CASE WHEN output_time     = 1 THEN ' SNAPSHOT START   ,'          END
-                   || CASE WHEN output_seconds  = 1 THEN '  SECONDS,'                   END
-                   || CASE WHEN output_stype    = 1 THEN ' TYPE,'                       END
-                   || CASE WHEN output_sname    = 1 THEN rpad(' STATISTIC',59,' ')||',' END
-                   || CASE WHEN output_delta    = 1 THEN '         DELTA,'              END
-                   || CASE WHEN output_delta_s  = 1 THEN '  DELTA/SEC,'                 END
-                   || CASE WHEN output_hdelta   = 1 THEN '     HDELTA,'                 END
-                   || CASE WHEN output_hdelta_s = 1 THEN ' HDELTA/SEC,'                 END
-                   || CASE WHEN output_percent  = 1 THEN '    %TIME,'                   END
-                   || CASE WHEN output_pcthist  = 1 THEN ' GRAPH       '                END
+                      CASE WHEN output_header      = 1 THEN 'HEAD,'                        END
+                   || CASE WHEN output_sid         = 1 THEN '    SID,'                     END
+                   || CASE WHEN output_username    = 1 THEN ' USERNAME  ,'                 END
+                   || CASE WHEN output_time        = 1 THEN ' SNAPSHOT START   ,'          END
+                   || CASE WHEN output_seconds     = 1 THEN '  SECONDS,'                   END
+                   || CASE WHEN output_stype       = 1 THEN ' TYPE,'                       END
+                   || CASE WHEN output_sname       = 1 THEN rpad(' STATISTIC',59,' ')||',' END
+                   || CASE WHEN output_delta       = 1 THEN '         DELTA,'              END
+                   || CASE WHEN output_delta_s     = 1 THEN '  DELTA/SEC,'                 END
+                   || CASE WHEN output_hdelta      = 1 THEN '     HDELTA,'                 END
+                   || CASE WHEN output_hdelta_s    = 1 THEN ' HDELTA/SEC,'                 END
+                   || CASE WHEN output_percent     = 1 THEN '    %TIME,'                   END
+                   || CASE WHEN output_pcthist     = 1 THEN ' GRAPH       ,'               END
+                   || CASE WHEN output_eventcnt    = 1 THEN ' NUM_WAITS,'                  END
+                   || CASE WHEN output_eventcnt_s  = 1 THEN '  WAITS/SEC,'                 END
+                   || CASE WHEN output_eventavg    = 1 THEN '   AVERAGES'                  END
             ;
 
 
@@ -1920,7 +1940,7 @@ begin
             get_sessions;
             snap(d2,s2);
 
-            -- manually coded nested loop outer join for calculating deltas
+            -- manually coded nested loop outer join for calculating deltas:
             -- why not use a SQL join? this would require creation of PL/SQL 
             -- collection object types, but Snapper does not require any changes 
             -- to the database, so any custom object types are out! 
@@ -1928,7 +1948,7 @@ begin
             missing_values_s1 := 0;
             missing_values_s2 := 0;
 
-            -- remember last disappeared SID so we woudlnt need to output a warning 
+            -- remember last disappeared SID so we wouldn't need to output a warning 
             -- message for each statistic row of that disappeared sid 
             disappeared_sid := 0;
 
@@ -1936,7 +1956,21 @@ begin
             a :=1; -- s1 array index
             b :=1; -- s2 array index
 
+            lv_curr_sid := s2(a).sid;
+
             while ( a <= s1.count and b <= s2.count ) loop
+
+                if lv_curr_sid != 0 and lv_curr_sid != s2(a).sid then
+                    if pagesize > 0 and mod(c-1, pagesize) = 0 then
+                        output(' ');
+                        output(rpad('-',length(gv_header_string),'-'));
+                        output(gv_header_string);
+                        output(rpad('-',length(gv_header_string),'-'));
+                    else 
+                        output(' ');
+                    end if;
+                    lv_curr_sid := s2(a).sid;
+                end if;
 
                 delta := 0; -- don't print
 
@@ -1947,6 +1981,7 @@ begin
                             when s1(a).statistic# = s2(b).statistic# then
 
                                 delta := s2(b).value - s1(a).value;
+                                evcnt := s2(b).event_count - s1(a).event_count;
                                 if delta != 0 then fout(); end if;
 
                                 a := a + 1;
@@ -1955,6 +1990,7 @@ begin
                             when s1(a).statistic# > s2(b).statistic# then
 
                                 delta := s2(b).value;
+                                evcnt := s2(b).event_count;
                                 if delta != 0 then fout(); end if;
 
                                 b := b + 1;
@@ -1975,6 +2011,7 @@ begin
                     when s1(a).sid > s2(b).sid then
 
                         delta := s2(b).value;
+                        evcnt := s2(b).event_count;
                         if delta != 0 then fout(); end if;
 
                         b := b + 1;
@@ -2003,8 +2040,8 @@ begin
             end loop; -- while ( a <= s1.count and b <= s2.count )
 
             if pagesize > 0 and changed_values > 0 then 
+                output(' ');
                 output('--  End of Stats snap '||to_char(c)||', end='||to_char(d2, 'YYYY-MM-DD HH24:MI:SS')||', seconds='||to_char(case (d2-d1) when 0 then &snapper_sleep else round((d2-d1) * 86400, 1) end)); 
-                output(''); 
             end if;
 
             output(' ');
