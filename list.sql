@@ -1,1 +1,1 @@
-!find ./ -name "*&1*.sql"
+!find ./ -iname "*&1*.sql"

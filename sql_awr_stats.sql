@@ -7,10 +7,11 @@ column dreads format 999G999G999
 column bgets format 999G999G999
 column avg_ela_sec format 9G999G999D99
 column avg_dreads format 99G999G999
-column avg_bgets format 99G999G999
+column avg_bgets format 999G999G999
 
 with exec_stats as
-  ( select 
+  ( select
+      instance_number,
       sqlstat.sql_id,
       sqlstat.plan_hash_value phash_value,
       min(sqlstat.snap_id) min_snap_id,
@@ -24,10 +25,12 @@ with exec_stats as
     where
       sql_id = '&sql_id'
     group by
+      instance_number,
       sql_id,
       plan_hash_value 
   )
 select
+  exec_stats.instance_number,
   to_char(snap1.begin_interval_time, 'DD/MM/YYYY HH24:MI') earliest_occur,
   to_char(snap2.end_interval_time, 'DD/MM/YYYY HH24:MI') latest_occur,
   sql_id,
@@ -45,6 +48,8 @@ from
   dba_hist_snapshot snap2
 where
   exec_stats.min_snap_id = snap1.snap_id
+  and exec_stats.instance_number = snap1.instance_number
   and exec_stats.max_snap_id = snap2.snap_id
+  and exec_stats.instance_number = snap2.instance_number
 ;
   
