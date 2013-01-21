@@ -1,3 +1,0 @@
-$id$
-
-dit is een git test
