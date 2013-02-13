@@ -12,7 +12,7 @@ column EM format a10
 column contents format a15
 column block_size format 99999 heading bsize
 
-select A.tablespace_name, A.bigfile, block_size, A.contents, extent_management EM, allocation_type AT,
+select A.tablespace_name, A.bigfile, block_size, A.contents, A.logging, extent_management EM, allocation_type AT,
        segment_space_management ssm, decode(allocation_type, 'UNIFORM',next_extent/1024,'') NE,
        B.max_mb, B.curr_mb,
        (B.max_mb - B.curr_mb) + nvl(c.free_mb,0) free_mb, 
