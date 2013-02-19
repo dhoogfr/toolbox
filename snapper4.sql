@@ -56,7 +56,7 @@
 --
 --------------------------------------------------------------------------------
 --
---   The Session Snapper v4.03 BETA ( USE AT YOUR OWN RISK !!! )
+--   The Session Snapper v4.04 BETA ( USE AT YOUR OWN RISK !!! )
 --   (c) Tanel Poder ( http://blog.tanelpoder.com )
 --
 --
@@ -245,7 +245,7 @@
 set termout off tab off verify off linesize 999 trimspool on trimout on null ""
 
 --debug:
--- set termout on serverout on
+-- set termout on serveroutput on
 
 -- Get parameters (future snapper v4.x extended syntax: @snapper <options> <"begin"|"end"|sleep#> <"snap_name"|snap_count> <sid>)
 define snapper_options="&1"
@@ -499,9 +499,9 @@ from
     mod_banner
 /
 
-set termout on
 -- on different lines as sql developer might not like this command
-set serverout on size 1000000 format wrapped
+set termout on
+set serveroutput on size 1000000 format wrapped
 
 prompt Sampling SID &4 with interval &snapper_sleep seconds, taking &snapper_count snapshots...
 
@@ -1907,7 +1907,7 @@ begin
  
     if pagesize > 0 then
         output(' ');
-        output('-- Session Snapper v4.03 BETA - by Tanel Poder ( http://blog.tanelpoder.com ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
+        output('-- Session Snapper v4.04 BETA - by Tanel Poder ( http://blog.tanelpoder.com ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
         output(' ');
     end if;
 
@@ -2246,4 +2246,4 @@ col snapper_ora11higher clear
 col snapper_ora11lower  clear
 col dbms_system_accessible clear
 
-set serverout off
+set serveroutput off
