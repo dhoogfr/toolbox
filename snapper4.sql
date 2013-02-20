@@ -56,7 +56,7 @@
 --
 --------------------------------------------------------------------------------
 --
---   The Session Snapper v4.04 BETA ( USE AT YOUR OWN RISK !!! )
+--   The Session Snapper v4.05 BETA ( USE AT YOUR OWN RISK !!! )
 --   (c) Tanel Poder ( http://blog.tanelpoder.com )
 --
 --
@@ -275,6 +275,7 @@ define _NO_BLK_INST=""
 define _MANUAL_SNAPSHOT="--"   
 define _USE_DBMS_LOCK=""
 
+-- set the noprint's value to "noprint" if you don't want these temporary variables to show up in a sqlplus spool file
 DEF noprint=""
 col snapper_ora11higher    &noprint new_value _IF_ORA11_OR_HIGHER
 col snapper_ora11lower     &noprint new_value _IF_LOWER_THAN_ORA11
@@ -501,7 +502,7 @@ from
 
 -- on different lines as sql developer might not like this command
 set termout on
-set serveroutput on size 1000000 format wrapped
+set serveroutput on size unlimited format wrapped
 
 prompt Sampling SID &4 with interval &snapper_sleep seconds, taking &snapper_count snapshots...
 
@@ -777,9 +778,9 @@ declare
         l_output_username VARCHAR2(100);
         gsid varchar2(20);
     begin
-      --if s2(b).stype='WAIT' then output( 'DEBUG WAIT ' || sn(s2(b).statistic#).name || ' ' || delta ); end if;
-      --output( 'DEBUG, Entering fout(), b='||to_char(b)||' sn(s2(b).statistic#='||s2(b).statistic# );
-      --output( 'DEBUG, In fout(), a='||to_char(a)||' b='||to_char(b)||' s1.count='||s1.count||' s2.count='||s2.count||' s2.count='||s2.count);
+        --if s2(b).stype='WAIT' then output( 'DEBUG WAIT ' || sn(s2(b).statistic#).name || ' ' || delta ); end if;
+        --output( 'DEBUG, Entering fout(), b='||to_char(b)||' sn(s2(b).statistic#='||s2(b).statistic# );
+        --output( 'DEBUG, In fout(), a='||to_char(a)||' b='||to_char(b)||' s1.count='||s1.count||' s2.count='||s2.count||' s2.count='||s2.count);
 
         gsid := trim(to_char(s2(b).inst_id))||','||trim(to_char(s2(b).sid));
 
@@ -791,6 +792,11 @@ declare
                 when others then raise;
             end;
         end if;
+
+        -- DEBUG
+        --output('before');
+        --output (CASE WHEN output_eventavg    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat(delta / CASE WHEN evcnt = 0 THEN 1 ELSE evcnt END, s2(b).stype), 10, ' ')||' average wait' ELSE get_useful_average(s2(b), s1(a)) END END);
+        --output('after');
 
         output( CASE WHEN output_header      = 1 THEN 'SID= ' END
              || CASE WHEN output_inst        = 1 THEN to_char(s2(b).inst_id, '9999')||', ' END
@@ -809,7 +815,7 @@ declare
              || CASE WHEN output_pcthist     = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT') THEN rpad(rpad('[', ceil(round(delta/CASE get_seconds(d2-d1) WHEN 0 THEN &snapper_sleep ELSE get_seconds(d2-d1) END / 100000,1))+1, CASE WHEN s2(b).stype IN ('WAIT') THEN 'W' WHEN sn(s2(b).statistic#).name = 'DB CPU' THEN '@' ELSE '#' END),11,' ')||']' ELSE '            ' END END||', '
              || CASE WHEN output_eventcnt    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN to_char(evcnt, '99999999') ELSE '         ' END END||', '
              || CASE WHEN output_eventcnt_s  = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat((evcnt / case get_seconds(d2-d1) when 0 then &snapper_sleep else get_seconds(d2-d1) end ), 'STAT' ), 10, ' ') ELSE '          ' END END||', '
-             || CASE WHEN output_eventavg    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat(delta / CASE WHEN evcnt = 0 THEN 1 ELSE evcnt END, s2(b).stype), 10, ' ')||' average wait' ELSE get_useful_average(s2(b), s1(b)) END END
+             || CASE WHEN output_eventavg    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat(delta / CASE WHEN evcnt = 0 THEN 1 ELSE evcnt END, s2(b).stype), 10, ' ')||' average wait' ELSE get_useful_average(s2(b), s1(a)) END END
         );
 
     end;
@@ -873,8 +879,8 @@ declare
     function get_useful_average(c in srec /* curr_metric */, p in srec /* all_prev_metrics */) return varchar2
     is
         ret varchar2(1000);
-        mt varchar2(100) := c.stype; -- metric_type
-        mn varchar2(100) := sn(c.statistic#).name; -- metric_name
+        mt  varchar2(100) := c.stype; -- metric_type
+        mn  varchar2(100) := sn(c.statistic#).name; -- metric_name
     begin
         case 
           when mt = 'STAT' then
@@ -1907,7 +1913,7 @@ begin
  
     if pagesize > 0 then
         output(' ');
-        output('-- Session Snapper v4.04 BETA - by Tanel Poder ( http://blog.tanelpoder.com ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
+        output('-- Session Snapper v4.05 BETA - by Tanel Poder ( http://blog.tanelpoder.com ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
         output(' ');
     end if;
 
@@ -2098,11 +2104,11 @@ begin
             a :=1; -- s1 array index
             b :=1; -- s2 array index
             
-            if s2.count > 0 then lv_curr_sid := s2(a).sid; end if;
+            if s2.count > 0 then lv_curr_sid := s2(b).sid; end if;
 
             while ( a <= s1.count and b <= s2.count ) loop
 
-                if lv_curr_sid != 0 and lv_curr_sid != s2(a).sid then
+                if lv_curr_sid != 0 and lv_curr_sid != s2(b).sid then
                     if pagesize > 0 and mod(c-1, pagesize) = 0 then
                         -- if filtering specific stats, assuming that it's better to not leave spaces between every session data
 
@@ -2113,7 +2119,7 @@ begin
                             -- output(rpad('-',length(gv_header_string),'-'));
                         end if;
                     end if;
-                    lv_curr_sid := s2(a).sid;
+                    lv_curr_sid := s2(b).sid;
                 end if;
 
                 delta := 0; -- don't print
@@ -2126,6 +2132,7 @@ begin
 
                                 delta := s2(b).value - s1(a).value;
                                 evcnt := s2(b).event_count - s1(a).event_count;
+                                --output('DEBUG, s1(a).statistic#  s2(b).statistic#, a='||to_char(a)||' b='||to_char(b)||' s1.count='||s1.count||' s2.count='||s2.count||' s2.count='||s2.count);
                                 if delta != 0 then fout(); end if;
 
                                 a := a + 1;
@@ -2162,10 +2169,10 @@ begin
 
                     when s1(a).sid < s2(b).sid then
 
-                        if disappeared_sid != s2(b).sid then
-                            output('WARN, Session has disappeared during snapshot, ignoring SID='||to_char(s2(b).sid)||' debug(a='||to_char(a)||' b='||to_char(b)||' s1.count='||s1.count||' s2.count='||s2.count||' s2.count='||s2.count||')');
+                        if disappeared_sid != s1(a).sid then
+                            output('WARN, Session has disappeared since previous snapshot, ignoring SID='||to_char(s1(a).sid)||' debug(a='||to_char(a)||' b='||to_char(b)||' s1.count='||s1.count||' s2.count='||s2.count||' s2.count='||s2.count||')');
                         end if;
-                        disappeared_sid := s2(b).sid;                    
+                        disappeared_sid := s1(a).sid;                    
                         a := a + 1;
 
                     else
