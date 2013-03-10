@@ -1,0 +1,61 @@
+#!/usr/bin/bash
+#
+# Sample 11g CRS resource status query script
+#
+# Description:
+#    - Returns formatted version of crs_stat -t, in tabular
+#      format, with the complete rsc names and filtering keywords
+#   - The argument, $RSC_KEY, is optional and if passed to the script, will
+#     limit the output to HA resources whose names match $RSC_KEY.
+# Requirements:
+#   - $ORA_CRS_HOME should be set to match your environment 
+#   - $AWK should be set to /usr/xpg4/bin/awk in solaris environments (on testes solaris 10 both awk (just hung) and nawk (broke when not passing filter) had a problem)
+
+ORA_CRS_HOME=/u01/
+QSTAT=-u
+AWK=/usr/bin/awk
+#AWK=/usr/xpg4/bin/awk   # on solaris you should probably use this one
+
+# Table header:echo ""
+$AWK \
+  'BEGIN {printf "%-45s %-10s %-18s\n", "HA Resource", "Target", "State";
+          printf "%-45s %-10s %-18s\n", "-----------", "------", "-----";}'
+
+# Table body:
+$ORA_CRS_HOME/bin/crsctl status resource | $AWK -v RSC_KEY=$1 \
+'
+function ltrim(s) { sub(/^[ \t]+/, "", s); return s }
+function rtrim(s) { sub(/[ \t]+$/, "", s); return s }
+function trim(s)  { return rtrim(ltrim(s)); }
+
+BEGIN { 
+  FS="="; 
+  state = 0; 
+}
+{ if ( $1 ~ /NAME/ && $2 ~ RSC_KEY && $2 !~ /gsd/ ) {
+    appname = $2; 
+    state=1
+  }
+  if ( state == 0 ) {
+    next;
+  }
+  if ( $1 ~ /TARGET/ && state == 1 ) {
+    apptarget = $2; 
+    atarget_leng=split(apptarget, atarget, ","); 
+    state=2;
+  }
+  if ( $1~/STATE/ && state == 2 ) {
+    appstate = $2; 
+    split(appstate, astate, ","); 
+    state=3;
+  }
+  if ( state == 3 ) { 
+    split(appname, a, ","); 
+    for (i = 1; i <= atarget_leng; i++) { 
+      printf "%-45s %-10s %-18s\n", appname, trim(atarget[i]), trim(astate[i]) 
+    }; 
+    state=0;
+    atarget_leng=0;
+  }
+} '
+echo "Note: excluding gsd"
