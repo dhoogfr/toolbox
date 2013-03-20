@@ -1,4 +1,4 @@
-set linesize 135
+set linesize 300
 set pagesize 9999
 column max_mb format 9G999G990D99
 column curr_mb format 9G999G990D99
