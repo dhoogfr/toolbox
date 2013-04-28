@@ -2,9 +2,9 @@ set linesize 150
 set pages 9999
 column status format a15
 
-break on inst_id skip 1 on process
+break on inst_id skip 1 on process on client_process
 
-select inst_id, process, status, thread#, sequence#, delay_mins, known_agents, active_agents 
+select inst_id, process, client_process, status, thread#, sequence#, delay_mins, known_agents, active_agents 
 from gv$managed_standby 
 order by inst_id, process, thread#;
 
