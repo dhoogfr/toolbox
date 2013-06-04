@@ -59,9 +59,9 @@ as
 )
 select
   target_name,
+  tbs_name,
   to_char(rollup_week, 'DD/MM/YYYY') rollup_week_s,
   to_char(rollup_week, 'IW') rollup_week_nbr,
-  tbs_name,
   first_allocated_mb,
   last_allocated_mb,
   (last_allocated_mb - first_allocated_mb) allocated_diff_mb,
