@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 --
--- File name:   snapper.sql
+-- File name:   snapper4.sql (Oracle Session Snapper v4)
 -- Purpose:     An easy to use Oracle session-level performance measurement tool
 --              which does NOT require any database changes nor creation of any
 --              database objects!
@@ -20,8 +20,8 @@
 --              The output is formatted the way it could be easily post-processed
 --              by either Unix string manipulation tools or loaded to spreadsheet.
 --
---              As of version 3.5, Snapper works on Oracle versions starting from
---              Oracle 9.2
+--              Snapper v4 supports RAC and requires Oracle 10.1 or a newer DB version.
+--              Snapper v3.5 works on Oracle versions starting from Oracle 9.2 (no RAC support)
 --
 -- Note1:       The "ASH" functionality in Snapper just samples GV$SESSION view,
 --              so you do NOT need Diagnostics Pack licenses to use Snapper's
@@ -56,7 +56,7 @@
 --
 --------------------------------------------------------------------------------
 --
---   The Session Snapper v4.05 BETA ( USE AT YOUR OWN RISK !!! )
+--   The Session Snapper v4.09 BETA ( USE AT YOUR OWN RISK !!! )
 --   (c) Tanel Poder ( http://blog.tanelpoder.com )
 --
 --
@@ -368,9 +368,9 @@ begin
         when trim(lower('&ssid_begin')) like 'action=%'    then lv_sid_filter   := 'lower(action) like '''           ||get_filter('&ssid_begin')||'''';
         when trim(lower('&ssid_begin')) like 'osuser=%'    then lv_sid_filter   := 'lower(osuser) like '''           ||get_filter('&ssid_begin')||'''';
         when trim(lower('&ssid_begin')) like 'client_id=%' then lv_sid_filter   := 'lower(client_identifier) like '''||get_filter('&ssid_begin')||'''';
-        when trim(lower('&ssid_begin')) like 'spid=%'      then lv_sid_filter   := '(s.inst_id,s.paddr) in (select addr from gv$process where spid in ('||get_filter('&ssid_begin')||'))';
-        when trim(lower('&ssid_begin')) like 'ospid=%'     then lv_sid_filter   := '(s.inst_id,s.paddr) in (select addr from gv$process where spid in ('||get_filter('&ssid_begin')||'))';
-        when trim(lower('&ssid_begin')) like 'pid=%'       then lv_sid_filter   := '(s.inst_id,s.paddr) in (select addr from gv$process where spid in ('||get_filter('&ssid_begin')||'))';
+        when trim(lower('&ssid_begin')) like 'spid=%'      then lv_sid_filter   := '(s.inst_id,s.paddr) in (select /*+ UNNEST */ inst_id,addr from gv$process where spid in ('||get_filter('&ssid_begin')||'))';
+        when trim(lower('&ssid_begin')) like 'ospid=%'     then lv_sid_filter   := '(s.inst_id,s.paddr) in (select /*+ UNNEST */ inst_id,addr from gv$process where spid in ('||get_filter('&ssid_begin')||'))';
+        when trim(lower('&ssid_begin')) like 'pid=%'       then lv_sid_filter   := '(s.inst_id,s.paddr) in (select /*+ NO_UNNEST */ inst_id,addr from gv$process where spid in ('||get_filter('&ssid_begin')||'))';
         when trim(lower('&ssid_begin')) like 'qcsid=%'     then lv_sid_filter   := '(s.inst_id,s.sid)   in (select /*+ NO_UNNEST */ inst_id,sid from gv$px_session where qcsid in ('||get_filter('&ssid_begin')||'))';
         when trim(lower('&ssid_begin')) like 'qc=%'        then lv_sid_filter   := '(s.inst_id,s.sid)   in (select /*+ NO_UNNEST */ inst_id,sid from gv$px_session where qcsid in ('||get_filter('&ssid_begin')||'))';
         when trim(lower('&ssid_begin')) like 'all%'        then lv_sid_filter   := '1=1';
@@ -415,64 +415,7 @@ exception
 end;
 /
 
--- this is here for a reason
--- im extracting the first word of the snapper_sid (if its a complex expression, not just a single SID)
--- by relying on how DEF and & assignment treat spaces in strings
--- def ssid_begin=&snapper_sid
-
--- select * from (
---     select 
---         snapper_sid
---         --case 
---         --    when regexp_instr('&ssid_begin','@')      = 0 then snapper_sid || ' AND inst_id = sys_context(''userenv'', ''instance'')'
---         --    when regexp_instr('&ssid_begin','@\*')    > 0 then regexp_replace(snapper_sid, '^(.+)@\*', '\1')  -- all instances
---         --    when regexp_instr('&ssid_begin','@\d+')   > 0 then regexp_replace(snapper_sid, '^(.+)@\d+', '\1') || ' AND inst_id = ' || regexp_replace(snapper_sid, '^(.+)@(\d+)(.*)', '\2') 
---         --    else snapper_sid
---         --end snapper_sid 
---     from (
---         select
---             case 
--- --                when trim(lower('&ssid_begin')) like 'sid=%'       then trim(replace('&ssid_begin','sid=','')) 
---                 when trim(lower('&ssid_begin')) like 'sid=%'       then 'select inst_id,sid from gv$session where sid in ('||trim(replace('&ssid_begin','sid=',''))||')' 
---                 when trim(lower('&ssid_begin')) like 'user=%'      then 'select inst_id,sid from gv$session where lower(username) like '''||lower(trim(replace('&ssid_begin','user=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'username=%'  then 'select inst_id,sid from gv$session where lower(username) like '''||lower(trim(replace('&ssid_begin','username=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'machine=%'   then 'select inst_id,sid from gv$session where lower(machine) like '''||lower(trim(replace('&ssid_begin','machine=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'program=%'   then 'select inst_id,sid from gv$session where lower(program) like '''||lower(trim(replace('&ssid_begin','program=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'service=%'   then 'select inst_id,sid from gv$session where lower(service_name) like '''||lower(trim(replace('&ssid_begin','service=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'module=%'    then 'select inst_id,sid from gv$session where lower(module) like '''||lower(trim(replace('&ssid_begin','module=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'action=%'    then 'select inst_id,sid from gv$session where lower(action) like '''||lower(trim(replace('&ssid_begin','action=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'osuser=%'    then 'select inst_id,sid from gv$session where lower(osuser) like '''||lower(trim(replace('&ssid_begin','osuser=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'client_id=%' then 'select inst_id,sid from gv$session where lower(client_identifier) like '''||lower(trim(replace('&ssid_begin','client_id=','')))||'''' 
---                 when trim(lower('&ssid_begin')) like 'spid=%'      then 'select inst_id,sid from gv$session where paddr in (select addr from gv$process where spid in ('||lower(trim(replace('&ssid_begin','spid=','')))||'))' 
---                 when trim(lower('&ssid_begin')) like 'ospid=%'     then 'select inst_id,sid from gv$session where paddr in (select addr from gv$process where spid in ('||lower(trim(replace('&ssid_begin','ospid=','')))||'))' 
---                 when trim(lower('&ssid_begin')) like 'pid=%'       then 'select inst_id,sid from gv$session where paddr in (select addr from gv$process where spid in ('||lower(trim(replace('&ssid_begin','pid=','')))||'))' 
---                 when trim(lower('&ssid_begin')) like 'qcsid=%'     then 'select inst_id,sid from gv$px_session where qcsid in ('||lower(trim(replace('&ssid_begin','qcsid=','')))||')'  -- TODO use pxs
---                 when trim(lower('&ssid_begin')) like 'qc=%'        then 'select inst_id,sid from gv$px_session where qcsid in ('||lower(trim(replace('&ssid_begin','qc=','')))||')'     -- TODO use pxs
---                 when trim(lower('&ssid_begin')) = 'all'            then 'select inst_id,sid from gv$session'
---                 when trim(lower('&ssid_begin')) = 'bg'             then 'select inst_id,sid from gv$session where type=''BACKGROUND'''
---                 when trim(lower('&ssid_begin')) = 'fg'             then 'select inst_id,sid from gv$session where type=''USER'''
---                 when trim(lower('&ssid_begin')) = 'smon'           then 'select inst_id,sid from gv$session where program like ''%(SMON)%'''
---                 when trim(lower('&ssid_begin')) = 'pmon'           then 'select inst_id,sid from gv$session where program like ''%(PMON)%'''
---                 when trim(lower('&ssid_begin')) = 'ckpt'           then 'select inst_id,sid from gv$session where program like ''%(CKPT)%'''
---                 when trim(lower('&ssid_begin')) = 'lgwr'           then 'select inst_id,sid from gv$session where program like ''%(LGWR)%'''
---                 when trim(lower('&ssid_begin')) = 'dbwr'           then 'select inst_id,sid from gv$session where program like ''%(DBW%)%'''
---                 when trim(lower('&ssid_begin')) like 'select%'     then null
---                 when trim(lower('&ssid_begin')) like 'with%'       then null 
---                 --else 'select inst_id,sid from gv$session where sid in (&ssid_begin)'  
---                 else null
---             end snapper_sid -- put the result back to snapper_sid sqlplus value (if its not null)
---         from 
---             dual
---     )
--- )
--- where
---     snapper_sid is not null -- snapper_sid sqlplus variable value will not be replaced if this query doesnt return any rows
--- /
-
-prompt snapper_sid = &snapper_sid
-
 -- this query populates some sqlplus variables required for dynamic compilation used below
-
 with mod_banner as (
     select
         replace(banner,'9.','09.') banner
@@ -500,14 +443,12 @@ from
     mod_banner
 /
 
--- on different lines as sql developer might not like this command
-set termout on
-set serveroutput on size unlimited format wrapped
+set termout on serveroutput on size 1000000 format wrapped
 
 prompt Sampling SID &4 with interval &snapper_sleep seconds, taking &snapper_count snapshots...
 
--- main()
 -- let the Snapping start!!!
+-- main()
 declare
     -- Snapper start
     -- forward declarations
@@ -891,6 +832,7 @@ declare
               when mn = 'execute count'                            then ret := lpad( tptformat(gd(c) / nullif(gd(c, 'STAT', 'parse count (total)'              ),0), mt), 10) || ' executions per parse';
               when mn = 'parse count (total)'                      then ret := lpad( tptformat(gd(c) / nullif(gd(c, 'STAT', 'parse count (hard)'               ),0), mt), 10) || ' softparses per hardparse';
               when mn = 'session cursor cache hits'                then ret := lpad( tptformat(gd(c) -       (gd(c, 'STAT', 'parse count (total)'              )  ), mt), 10) || ' softparses avoided thanks to cursor cache';
+              when mn = 'session logical reads'                    then ret := lpad( tptformat(gd(c) +       (gd(c, 'STAT', 'buffer is pinned count'           )  ), mt), 10) || ' total buffer visits';
               when mn = 'buffer is pinned count'                   then ret := lpad( tptformat(gd(c) / nullif(gd(c) + gd(c, 'STAT', 'session logical reads'),0) * 100, mt), 10) || ' % buffer gets avoided thanks to buffer pin caching';
               else ret :=                                                      lpad( tptformat(gd(c) / nullif(gd(c, 'STAT', 'execute count'),0), mt), 10) || ' per execution' ;
             end case; -- mt=stat, mn
@@ -996,7 +938,8 @@ declare
                                                                                            ,0) , mt), 10) || ' unaccounted time' ;
               else null;
             end case; -- mt=time, mn
-        end case; -- mt
+        else null;
+    end case; -- mt
         return ret;
     end get_useful_average;
  
@@ -1111,7 +1054,7 @@ declare
        tmp_sessions tmp_sestab;
    begin
 
-       select /*+ unnest */
+       select /*+ unnest */ /* get_session_list:1 */
            *
        bulk collect into
            tmp_sessions
@@ -1141,7 +1084,7 @@ declare
        l_return_sessions sestab; 
    begin
 
-       select /*+ unnest */
+       select /*+ unnest */ /* get_session_list:2 */
            *
        bulk collect into
            tmp_sessions
@@ -1299,7 +1242,7 @@ declare
 
         p_snapdate := systimestamp;
 
-        select /* */ p_snapdate ts, snapper_stats.*
+        select /* get_session_stats */ p_snapdate ts, snapper_stats.*
         bulk collect into p_stats
         from (
                                          select 'STAT' stype, s.inst_id, s.sid, ss.statistic# - pls_adjust statistic#, ss.value, null event_count
@@ -1636,7 +1579,7 @@ declare
 
       -- this is needed for "easy" sorting and group by ops (without any custom stored object types!)
       for i in (
-          with raw_records as (
+          with /* get_aggregates_from_ash */ raw_records as (
              select column_value rec from table(cast(g_ash as sys.dbms_debug_vc2coll))
           ),
           ash_records as (
@@ -1913,13 +1856,13 @@ begin
  
     if pagesize > 0 then
         output(' ');
-        output('-- Session Snapper v4.05 BETA - by Tanel Poder ( http://blog.tanelpoder.com ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
+        output('-- Session Snapper v4.09 BETA - by Tanel Poder ( http://blog.tanelpoder.com ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
         output(' ');
     end if;
 
     -- initialize statistic and event name array
     -- fetch statistic names with their adjusted IDs
-    select *
+    select /* get_stat_names */ *
     bulk collect into sn_tmp
     from (
                                  select 'STAT' stype, statistic# - pls_adjust statistic#, name
@@ -2249,8 +2192,18 @@ undefine _IF_DBMS_SYSTEM_ACCESSIBLE
 undefine _IF_X_ACCESSIBLE
 undefine _MANUAL_SNAPSHOT
 undefine _USE_DBMS_LOCK
-col snapper_ora11higher clear
-col snapper_ora11lower  clear
+col snapper_ora11higher    clear
+col snapper_ora11lower     clear
 col dbms_system_accessible clear
+col x_accessible           clear 
+col no_plsql_obj_id        clear 
+col yes_plsql_obj_id       clear 
+col no_blk_inst            clear 
+col yes_blk_inst           clear 
+col manual_snapshot        clear 
+col use_dbms_lock          clear 
+col snapper_sid            clear 
+col sid_filter             clear 
+col inst_filter            clear 
 
 set serveroutput off
