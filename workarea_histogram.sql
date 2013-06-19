@@ -1,32 +1,40 @@
-set pages 999
-set linesize 120
+-- overview of the number of optimal / onepass / multipass sorts per workarea histogram bucket
+-- translating the low / high_optimal_size number into human readable units
 
-column losize format a15 
-column hisize format a15
-column optimal format 999G999G999
-column onepass format 999G999G999
-column multipasses format 999G999G999
-column total format 9G999G999G999
+column low_optimal_size_h format a15 justify right
+column high_optimal_size_h format a15 justify right
+column optimal_executions format 999G999G999G999
+column onepass_executions format 999G999G999G999
+column multipass_executions format 999G999G999G999
+column total_executions format 999G999G999G999
 
-select case when low_optimal_size < 1024 then
-              to_char(low_optimal_size,'99G999D99')
-            when low_optimal_size between 1024 and 1024*1024 -1
-              then to_char(low_optimal_size/1024,'99G999D99') || ' K'
-            when low_optimal_size between 1024*1024 and 1024*1024*1024 -1
-              then to_char(low_optimal_size/1024/1024,'99G999D99') || ' M'
-            when low_optimal_size >= 1024*1024*1024
-              then to_char(low_optimal_size/1024/1024/1024,'99G999D99') || ' G'
-       end losize,
-       case when high_optimal_size < 1024 then
-              to_char(high_optimal_size,'99G999D99')
-            when high_optimal_size between 1024 and 1024*1024 - 1
-              then to_char(high_optimal_size/1024,'99G999D99') || ' K'
-            when high_optimal_size between 1024*1024 and 1024*1024*1024 -1
-              then to_char(high_optimal_size/1024/1024,'99G999D99') || ' M'
-            when high_optimal_size >= 1024*1024*1024
-              then to_char(high_optimal_size/1024/1024/1024,'99G999D99') || ' G'
-       end hisize, 
-       optimal_executions optimal, onepass_executions onepass, multipasses_executions multipasses,
-       total_executions total
-from v$sql_workarea_histogram
-order by low_optimal_size, high_optimal_size;
+break on inst_id skip 1
+
+select
+  inst_id,
+  case
+    when low_optimal_size >= 1099511627776 then to_char(low_optimal_size/1024/1024/1024/1024, '999G990D99') || ' TB' 
+    when low_optimal_size >= 1073741824 then to_char(low_optimal_size/1024/1024/1024, '999G990D99') || ' GB'
+    when low_optimal_size >= 1048576 then to_char(low_optimal_size/1024/1024, '999G990D99') || ' MB'
+    when low_optimal_size >= 1024 then to_char(low_optimal_size/1024, '999G990D99') || ' KB'
+    else to_char(low_optimal_size, '999G990D99')
+  end as low_optimal_size_h,
+  case
+    when high_optimal_size >= 1099511627776 then to_char(high_optimal_size/1024/1024/1024/1024, '999G990D99') || ' TB' 
+    when high_optimal_size >= 1073741824 then to_char(high_optimal_size/1024/1024/1024, '999G990D99') || ' GB'
+    when high_optimal_size >= 1048576 then to_char(high_optimal_size/1024/1024, '999G990D99') || ' MB'
+    when high_optimal_size >= 1024 then to_char(high_optimal_size/1024, '999G990D99') || ' KB'
+    else to_char(high_optimal_size, '999G990D99')
+  end as high_optimal_size_h,
+  optimal_executions, 
+  onepass_executions, 
+  multipasses_executions, 
+  total_executions 
+from 
+  gv$sql_workarea_histogram 
+order by
+  inst_id, 
+  low_optimal_size
+;
+
+clear breaks
