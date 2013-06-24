@@ -14,6 +14,8 @@ prompt -----
 
 set linesize 200
 
+break on instance
+
 column interval format a30 word_wrapped
 column what format a50 word_wrapped
 column failures format 999
@@ -23,12 +25,15 @@ column last_date format a10
 column last_sec format a10
 
 select
-  job, schema_user, what, last_date, last_sec, interval, broken, failures 
+  instance, job, schema_user, what, last_date, last_sec, interval, broken, failures 
 from
   dba_jobs
 order by 
+  instance,
   job
 ;
+
+clear breaks
 
 prompt
 prompt
