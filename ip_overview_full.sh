@@ -48,7 +48,13 @@ echo
 echo "modprobe.conf"
 echo "-------------"
 
-cat /etc/modprobe.conf
+if [ -r /etc/modprobe.conf ]
+then
+  cat /etc/modprobe.conf
+elif [ -r /etc/modprobe.d/bonding.conf ]  ### new Redhat / OL 6 specification
+then
+  cat /etc/modprobe.d/bonding.conf
+fi
 
 echo
 echo "Routing table"
