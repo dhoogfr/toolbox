@@ -1,3 +1,11 @@
+set verify off
+
+set feedback off
+column inputpar01 new_value 1 noprint
+select 1 inputpar01 from dual where 1=2;
+set feedback 6
+
+
 set linesize 250
 set pagesize 9999
 column max_mb format 999G999G990D99
@@ -34,5 +42,7 @@ from dba_tablespaces A,
      ) C
 where A.tablespace_name = B.tablespace_name
       and A.tablespace_name = C.tablespace_name(+)
+      and A.tablespace_name like nvl('&1', '%')
 order by tablespace_name;
 
+undef 1
