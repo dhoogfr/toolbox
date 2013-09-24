@@ -45,4 +45,7 @@ where df.tablespace_name = fs.tablespace_name(+)
       and df.tablespace_name like nvl('&1', '%')
 order by name;
 
+clear breaks
+clear computes
+
 undef 1

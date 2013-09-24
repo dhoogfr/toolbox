@@ -1,7 +1,14 @@
-column tbs_mb format 9G999G999D99
-column tbs_max_mb format 9G999G999D99
-column tbs_used_mb format 9G999G999D99
+column tbs_mb format 9G999G999G999D99
+column tbs_max_mb format 9G999G999G999D99
+column tbs_used_mb format 9G999G999G999D99
+
 break on tablespace_name skip 1
+
+set feedback off
+column inputpar01 new_value 1 noprint
+select 1 inputpar01 from dual where 1=2;
+set feedback 6
+
 
 with hist_per_day
 as
@@ -24,4 +31,9 @@ where hpd.first_snap = tbssp.snap_id
       and hpd.tablespace_id = tbssp.tablespace_id
       and tbssp.tablespace_id = ts.ts#
       and ts.name = tbs.tablespace_name
+      and tbs.tablespace_name like nvl('&1', '%')
 order by tbs.tablespace_name, snap_id;
+
+clear breaks
+
+undef 1
