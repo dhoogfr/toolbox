@@ -8,6 +8,7 @@ column userhost format a40
 column userid format a30
 column first_connection format a20
 column last_connection format a20
+column cnt_connections format 9G999G999G999
 
 break on globalname on userhost
 
@@ -28,7 +29,8 @@ select
   userhost,
   userid,
   to_char(min(ntimestamp#),'DD/MM/YYYY HH24:MI') first_connection,
-  to_char(max(ntimestamp#), 'DD/MM/YYYY HH24:MI') last_connection
+  to_char(max(ntimestamp#), 'DD/MM/YYYY HH24:MI') last_connection,
+  count(*) cnt_connections
 from
   incoming  
 group by
@@ -39,6 +41,6 @@ order by
   globalname,
   userhost,
   userid
-;re
+;
 
 clear breaks
