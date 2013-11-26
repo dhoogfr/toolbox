@@ -16,7 +16,7 @@ select
 from
   dba_hist_sqlstat
 where
-  sql_id = 'f&sql_id'
+  sql_id = '&sql_id'
 group by
   sql_id,
   plan_hash_value
