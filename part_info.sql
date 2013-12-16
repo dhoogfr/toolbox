@@ -102,6 +102,7 @@ from
 where
   spart.table_owner = part.table_owner
   and spart.table_name = part.table_name
+  and spart.partition_name = part.partition_name
   and spart.table_owner = seg.owner(+)
   and spart.table_name = seg.segment_name(+)
   and spart.partition_name = seg.partition_name(+)
