@@ -10,7 +10,7 @@ column username format a20
 column created format a10
 column lock_date format a10
 column expiry_date format a11
-column profile format a20
+column profile format a25
 column account_status format a25
 column default_tablespace format a20
 column temporary_tablespace format a20
