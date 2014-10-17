@@ -3,21 +3,23 @@
 
 set linesize 250
 
-column globalname format a30
-column userhost format a40
-column userid format a30
+column source_globalname format a30
+column dblink_name format a50
+column source_host format a40
+column dest_schema format a30
 column first_connection format a20
 column last_connection format a20
 column cnt_connections format 9G999G999G999
 
-break on globalname on userhost
+break on source_globalname on dblink_name on userhost
 
 with
   incoming as
     ( select 
-        regexp_replace(comment$text, '.*=(.*)\..*', '\1') globalname,
-        userhost,
-        userid,
+        regexp_replace(comment$text, '.*SOURCE_GLOBAL_NAME=(([^,]+)),.*', '\1') source_globalname,
+        regexp_replace(comment$text, '.*DBLINK_NAME=(([^,]+)),.*', '\1') dblink_name,
+        userhost source_host,
+        userid dest_schema,
         ntimestamp#
       from 
         sys.aud$ 
@@ -25,22 +27,26 @@ with
         comment$text like 'DBLINK%' 
     )
 select
-  globalname,
-  userhost,
-  userid,
+  source_globalname,
+  dblink_name,
+  source_host,
+  dest_schema,
   to_char(min(ntimestamp#),'DD/MM/YYYY HH24:MI') first_connection,
   to_char(max(ntimestamp#), 'DD/MM/YYYY HH24:MI') last_connection,
   count(*) cnt_connections
 from
   incoming  
 group by
-  globalname,
-  userhost,
-  userid
+  source_globalname,
+  dblink_name,
+  source_host,
+  dest_schema
 order by
-  globalname,
-  userhost,
-  userid
+  source_globalname,
+  dblink_name,
+  source_host,
+  dest_schema
 ;
 
 clear breaks
+
