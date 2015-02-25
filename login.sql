@@ -1,4 +1,3 @@
-[oracle@x1dmdb01 toolbox]$ cat login.sql
 -- suppress the output to the screen
 set termout off
 
