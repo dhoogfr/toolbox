@@ -70,6 +70,7 @@ col mgmt_p8                     format 999          heading "MGMT|P8"
 col queueing_p1                 format 99999        heading "Queueing|TimeOut"
 col parallel_target_percentage  format 999          heading "Parallel|Target %"
 col parallel_degree_limit_p1    format 99999        heading "Parallel|Limit"
+col active_sess_pool_p1         format 999999       heading "Session|Limit"
 col status                      format a10          heading "Status"
 
 break on plan skip page
@@ -97,6 +98,7 @@ select
   parallel_degree_limit_p1,
   parallel_target_percentage,
   queueing_p1,
+  active_sess_pool_p1,
   status
 from
   dba_rsrc_plan_directives
