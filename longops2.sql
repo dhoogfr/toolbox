@@ -11,15 +11,15 @@ column pct_complete format 09D00
 select
   sid, serial#, sql_id, to_char(start_time, 'DD/MM/YYYY HH24:MI:SS') start_time, opname,
   round((100 * sofar)/totalwork, 2)  pct_complete,
-  ( extract(day from (systimestamp + elapsed_seconds/24/60/60 - systimestamp)) || ' ' ||
-    extract(hour from (systimestamp + elapsed_seconds/24/60/60 - systimestamp)) || ':' ||
-    extract(minute from (systimestamp + elapsed_seconds/24/60/60 - systimestamp))  || ':' ||
-    round(extract(second from (systimestamp + elapsed_seconds/24/60/60 - systimestamp)))  
+  ( extract(day from (systimestamp + numtodsinterval(elapsed_seconds, 'seconds') - systimestamp)) || ' ' ||
+    extract(hour from (systimestamp + numtodsinterval(elapsed_seconds, 'seconds') - systimestamp)) || ':' ||
+    extract(minute from (systimestamp + numtodsinterval(elapsed_seconds, 'seconds') - systimestamp))  || ':' ||
+    round(extract(second from (systimestamp + numtodsinterval(elapsed_seconds, 'seconds') - systimestamp)))
   ) ET,
-  ( extract(day from (systimestamp + time_remaining/24/60/60 - systimestamp))  || ' ' ||
-    extract(hour from (systimestamp + time_remaining/24/60/60 - systimestamp))  || ':' ||
-    extract(minute from (systimestamp + time_remaining/24/60/60 - systimestamp))  || ':' ||
-    round(extract(second from (systimestamp + time_remaining/24/60/60 - systimestamp))) 
+  ( extract(day from (systimestamp + numtodsinterval(time_remaining, 'seconds') - systimestamp))  || ' ' ||
+    extract(hour from (systimestamp + numtodsinterval(time_remaining, 'seconds') - systimestamp))  || ':' ||
+    extract(minute from (systimestamp + numtodsinterval(time_remaining, 'seconds') - systimestamp))  || ':' ||
+    round(extract(second from (systimestamp + numtodsinterval(time_remaining, 'seconds') - systimestamp)))
   ) RT
 from
   v$session_longops
