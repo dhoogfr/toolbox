@@ -104,16 +104,16 @@ select
   db.name,
   st.db_unique_name,
   abs.session_key,
-  to_char(subjob_start_time, 'DD/MM/YYYY HH24:MI') subjob_start_time,
-  to_char(subjob_completion_time, 'DD/MM/YYYY HH24:MI') subjob_end_time,
-  ( decode(subjob_elapsed_sec, 0, 0, extract(day from (systimestamp + numtodsinterval(subjob_elapsed_sec,'second') - systimestamp))) || ' ' ||
-    decode(subjob_elapsed_sec, 0, 0, extract(hour from (systimestamp + numtodsinterval(subjob_elapsed_sec,'second') - systimestamp))) || ':' ||
-    decode(subjob_elapsed_sec, 0, 0, extract(minute from (systimestamp + numtodsinterval(subjob_elapsed_sec,'second') - systimestamp))) || ':' ||
-    decode(subjob_elapsed_sec, 0, 0, floor(extract(second from (systimestamp + numtodsinterval(subjob_elapsed_sec,'second') - systimestamp))))
+  to_char(abs.subjob_start_time, 'DD/MM/YYYY HH24:MI') subjob_start_time,
+  to_char(abs.subjob_completion_time, 'DD/MM/YYYY HH24:MI') subjob_end_time,
+  ( decode(abs.subjob_elapsed_sec, 0, 0, extract(day from (systimestamp + numtodsinterval(abs.subjob_elapsed_sec,'second') - systimestamp))) || ' ' ||
+    decode(abs.subjob_elapsed_sec, 0, 0, extract(hour from (systimestamp + numtodsinterval(abs.subjob_elapsed_sec,'second') - systimestamp))) || ':' ||
+    decode(abs.subjob_elapsed_sec, 0, 0, extract(minute from (systimestamp + numtodsinterval(abs.subjob_elapsed_sec,'second') - systimestamp))) || ':' ||
+    decode(abs.subjob_elapsed_sec, 0, 0, floor(extract(second from (systimestamp + numtodsinterval(abs.subjob_elapsed_sec,'second') - systimestamp))))
   ) as elapsed_time,
-  long_backup_type,
-  incremental_level,
-  subjob_mb
+  abs.long_backup_type,
+  abs.incremental_level,
+  abs.subjob_mb
 from
   available_bs  abs,
   rc_site       st,
@@ -126,7 +126,7 @@ order by
   db.dbid,
   db.name,
   st.db_unique_name,
-  subjob_start_time,
+  abs.subjob_start_time,
   long_backup_type
 ;
 
