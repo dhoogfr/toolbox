@@ -1,4 +1,4 @@
-set linesize 200
+set linesize 250
 set pages 50000
 
 col sequence#                format 999          heading "Seq"
@@ -18,6 +18,7 @@ col pqs_queued               format 9G999        heading "PQ|queued"
 col pq_active_time_sec       format 999G999G999  heading "PQ|Active sec"
 col pq_queued_time_sec       format 999G999G999  heading "PQ|Queued sec"
 col pq_queue_time_outs       format 999G999      heading "PQ|Timeouts"
+col active_sess_limit_hits   format 999G999      heading "A Sess|Limits"
 
 compute sum of consumed_cpu_time_sec on start_time
 compute sum of cpu_pct_used on start_time
@@ -38,7 +39,7 @@ select
   consumed_cpu_time_sec, cpu_waits, cpu_wait_time_sec,
   (ratio_to_report(consumed_cpu_time_sec) over (partition by start_time) * 100) cpu_pct_used,
   yields, pqs_completed, pq_servers_used, pqs_queued, pq_active_time_sec, pq_queued_time_sec, 
-  pq_queue_time_outs
+  pq_queue_time_outs,active_sess_limit_hits
 from
   ( select
       ph.start_time, 
@@ -53,7 +54,8 @@ from
       sum(cgh.pqs_queued)               pqs_queued, 
       sum(cgh.pq_active_time)/1000      pq_active_time_sec, 
       sum(cgh.pq_queued_time)/1000      pq_queued_time_sec, 
-      sum(cgh.pq_queue_time_outs)       pq_queue_time_outs
+      sum(cgh.pq_queue_time_outs)       pq_queue_time_outs,
+      sum(cgh.active_sess_limit_hit)    active_sess_limit_hits
     from
       gv$rsrc_cons_group_history     cgh,
       gv$rsrc_plan_history           ph
