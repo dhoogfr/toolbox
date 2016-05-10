@@ -14,9 +14,10 @@ column profile format a25
 column account_status format a25
 column default_tablespace format a20
 column temporary_tablespace format a20
-column password format a20
-column password_versions format a10 heading "P VERSIONS"
-column default_consumer_group format a25 heading "INITIAL CONSUMER GROUP"
+--column password format a20
+--column password_versions format a10 heading "P VERSIONS"
+--column default_consumer_group format a25 heading "INITIAL CONSUMER GROUP"
+column authentication_type format a10 heading "PWD TYPE"
 
 
 select 
@@ -41,10 +42,13 @@ select
                            )
                  ), 'DD/MM/YYYY') expiry_date,
   dts.name default_tablespace, 
-  tts.name tempory_tablespace, 
-  u.password password,
-  nvl(cgm.consumer_group, 'DEFAULT_CONSUMER_GROUP') initial_rsrc_consumer_group,
-  decode(length(u.password),16,'10G ',NULL)||NVL2(u.spare4, '11G ' ,NULL) password_versions
+  tts.name tempory_tablespace,
+  decode(u.password, 'GLOBAL',   'GLOBAL',
+                   'EXTERNAL', 'EXTERNAL',
+                   'PASSWORD') authentication_type
+--  u.password password,
+--  nvl(cgm.consumer_group, 'DEFAULT_CONSUMER_GROUP') initial_rsrc_consumer_group,
+--  decode(length(u.password),16,'10G ',NULL)||NVL2(u.spare4, '11G ' ,NULL) password_versions
 from 
   sys.user$ u 
     left outer join sys.resource_group_mapping$ cgm
