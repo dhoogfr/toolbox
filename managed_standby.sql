@@ -1,4 +1,4 @@
-set linesize 150
+set linesize 200
 set pages 9999
 column status format a15
 

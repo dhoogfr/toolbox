@@ -4,7 +4,7 @@ column username format a20
 column bi format 99
 column bs format 9999
 column siw format 999999
-column rwo# format 999999
+column rwo# format 99999999
 column tl format a5
 column inst_id format a10
 

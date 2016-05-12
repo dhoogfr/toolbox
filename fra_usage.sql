@@ -1,8 +1,8 @@
 set linesize 150
 
-column space_limit_mb format 999G999D99
-column space_used_mb format 999G999D99
-column space_reclaimable_mb format 999G999D99
+column space_limit_mb format 9G999G999D99
+column space_used_mb format 9G999G999D99
+column space_reclaimable_mb format 9G999G999D99
 column percent_space_used format 00D99
 column percent_space_reclaimable format 00D99
 

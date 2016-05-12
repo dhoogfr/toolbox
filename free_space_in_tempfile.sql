@@ -1,8 +1,8 @@
-col size_temp_files format 99999 Heading "Size|Temp|Files"
-col free_space_in_temp_files format 99999 Heading "Free|Space|In|Temp|Files"
-col free_space_in_sort_segment format 99999 Heading "Free|Space|In|Sort|Segment"
-col used_space_in_sort_segment format 99999 Heading "Used|Space|In|Sort|Segment"
-col total_free format 99999 Heading "Total|Free"
+col size_temp_files format 999G999G999G999 Heading "Size|Temp|Files"
+col free_space_in_temp_files format 999G999G999G999 Heading "Free|Space|In|Temp|Files"
+col free_space_in_sort_segment format 999G999G999G999 Heading "Free|Space|In|Sort|Segment"
+col used_space_in_sort_segment format 999G999G999G999 Heading "Used|Space|In|Sort|Segment"
+col total_free format 999G999G999G999 Heading "Total|Free"
 
 select tsh.tablespace_name,
        dtf.omvang size_temp_files,
