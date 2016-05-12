@@ -1,0 +1,49 @@
+ssh exitasadmin@10.7.183.249  "lun show -instance" | tr -d ' ' | dos2unix | \
+awk '
+BEGIN {
+  FS = ":"
+}  {
+  if ($1 ~ "LUNName") {
+    lunname=$2
+  }
+  if ($1 ~ "LUNSize") {
+    lunsize=$2
+  } 
+  if ($1 ~ "SerialNumber") {
+    lunserial=$2
+    cmd="echo -n " lunserial "| od -A n -t x1 |tr -d \" \""
+    cmd | getline lunwwid
+    close(cmd)
+    printf "%-30s %10s %-15s 3600a0980%-20s\n", lunname, lunsize, lunserial, lunwwid
+  }
+}'
+
+
+
+
+3600a0980:32:46:67:69:34:2b:47:68:43:4a:63:4e
+         :32:46:67:69:34:2b:47:68:43:4a:63:4e
+
+
+==> use set commands to set all fields, field separator and disable pagination to make processing via scripting easier
+==> set -rows 0 also seems to disable the row jumping when the value is larger then the column width
+
+
+ssh exitasadmin@10.7.183.249  "set -rows 0 ; set -showallfields true ; set -showseparator \";\" ; set -units GB ; lun show -fields vserver,path,lun,size,serial"  |\
+awk '
+BEGIN {
+  FS=";"
+  printf "%-30s %10s %-15s %-33s\n", "Name", "Size", "Serial", "WWID"
+  printf "%-30s %10s %-15s %-33s\n", "------------------------------", "----------", "---------------", "---------------------------------"
+} 
+NR > 6 {
+  if ($3 != "") {
+    cmd="echo -n " $5 "| od -A n -t x1 |tr -d \" \""
+    cmd | getline lunwwid
+    close(cmd)
+    printf "%-30s %10s %-15s 3600a0980%-24s\n", $3, $4, $5, lunwwid
+  }
+}'
+
+
+3600a0980 32466769342b4768434a634d
