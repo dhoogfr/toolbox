@@ -25,7 +25,7 @@ from ( select trunc(completion_time) dag, sum(blocks * block_size)/1024/1024 gen
 /* 
 archived redo over the (max) last 10 days
 */
-column day_arch_size format 99G999D99
+column day_arch_size format 9G999G999D99
 column day_arch# format 999G999
 column graph format a15
 column dayname format a12
