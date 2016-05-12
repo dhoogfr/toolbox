@@ -1,3 +1,6 @@
+set linesize 250
+set pages 50000
+
 col plan                    format a30                  heading "Plan Name"
 col mgmt_method             format a10                  heading "MGMT|Method"
 col status                  format a10                  heading "Status"
@@ -67,6 +70,7 @@ col mgmt_p5                     format 999          heading "MGMT|P5"
 col mgmt_p6                     format 999          heading "MGMT|P6"
 col mgmt_p7                     format 999          heading "MGMT|P7"
 col mgmt_p8                     format 999          heading "MGMT|P8"
+col utilization_limit           format 999          heading "UTL|LIM"
 col queueing_p1                 format 99999        heading "Queueing|TimeOut"
 col parallel_target_percentage  format 999          heading "Parallel|Target %"
 col parallel_degree_limit_p1    format 99999        heading "Parallel|Limit"
@@ -95,6 +99,7 @@ select
   mgmt_p6,
   mgmt_p7,
   mgmt_p8,
+  utilization_limit,
   parallel_degree_limit_p1,
   parallel_target_percentage,
   queueing_p1,
@@ -234,3 +239,22 @@ where
 order by
   inst_id
 ;
+
+-- job classes
+
+column job_class_name format a30
+column resource_consumer_group format a40
+column service format a40
+select
+  job_class_name,
+  resource_consumer_group,
+  service
+from
+  dba_scheduler_job_classes
+where
+  job_class_name not like 'ORA$AT%'
+  and job_class_name not in
+    ( 'AQ$_PROPAGATION_JOB_CLASS', 'XMLDB_NFS_JOBCLASS', 'SCHED$_LOG_ON_ERRORS_CLASS', 'DBMS_JOB$', 'DEFAULT_JOB_CLASS')
+order by
+ job_class_name
+/
