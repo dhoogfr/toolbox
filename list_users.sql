@@ -6,7 +6,7 @@ column inputpar01 new_value 1 noprint
 select 1 inputpar01 from dual where 1=2;
 set feedback 6
 
-column username format a20
+column username format a30
 column created format a10
 column lock_date format a10
 column expiry_date format a11
