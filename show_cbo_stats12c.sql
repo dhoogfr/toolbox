@@ -27,7 +27,7 @@ column leaf_blocks heading "Leaf|Blks" format 99990
 column distinct_keys heading "Distinct|Keys" format 9G999G990
 column avg_leaf_blocks_PER_KEY heading "Average|Leaf Blocks|Per Key" format 99G990
 column avg_data_blocks_PER_KEY heading "Average|Data Blocks|Per Key" format 99G990
-column clustering_factor heading "Cluster|Factor" format 999G990
+column clustering_factor heading "Cluster|Factor" format 999G999G990
 column column_position heading "Col|Pos" format 990
 column col heading "Column|Details" format a24
 column column_length heading "Col|Len" format 990
