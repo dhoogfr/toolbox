@@ -60,7 +60,7 @@ WITH p as
  ),
  s as
  ( select d.name database, p.dbid, p.instance_number, p.prev_snap_id bsnap_id, p.snap_id esnap_id, 
-          p.end_interval_time bsnap_time, bs.stat_name,
+          p.begin_interval_time bsnap_time, p.end_interval_time esnap_time, bs.stat_name,
           round((es.value-bs.value)/(   extract(second from (p.end_interval_time - p.begin_interval_time))
                                       + extract(minute from (p.end_interval_time - p.begin_interval_time)) * 60
                                       + extract(hour   from (p.end_interval_time - p.begin_interval_time)) * 60 * 60
@@ -91,7 +91,7 @@ WITH p as
  ),
 g as
  ( select /*+ FIRST_ROWS */
-          database, instance_number, bsnap_time,
+          database, instance_number,  bsnap_id, esnap_id, bsnap_time, esnap_time,
           sum(decode( stat_name, 'redo size'                               , valuepersecond, 0 )) redo_size,
           sum(decode( stat_name, 'redo blocks written'                     , valuepersecond, 0 )) redo_blocks,
           sum(decode( stat_name, 'session logical reads'                   , valuepersecond, 0 )) logical_reads,
@@ -115,9 +115,9 @@ g as
           sum(decode( stat_name, 'recursive cpu usage'                     , valuepersecond/100, 0 )) rec_cpusecs,
           sum(decode( stat_name, 'parse time cpu'                          , valuepersecond/100, 0 )) parse_cpusecs
  from s
- group by database,instance_number, bsnap_time
+ group by database,instance_number, bsnap_id, esnap_id, bsnap_time, esnap_time
  )
-select to_char(bsnap_time,'DD-MON-YY HH24:MI') snap_time, instance_number, redo_blocks, logical_reads, block_changes, physical_reads,
+select instance_number, bsnap_id, to_char(bsnap_time,'DD-MON-YY HH24:MI') bsnap_time, esnap_id, to_char(esnap_time,'DD-MON-YY HH24:MI') esnap_time, redo_blocks, logical_reads, block_changes, physical_reads,
        physical_writes, user_calls, parses, hard_parses, sorts, logons, executes, transactions,
        to_char(100 * (block_changes / decode(logical_reads,0,1,logical_reads)),'909D90')||'%' changes_per_read,
        to_char(100 * (recursive_calls / decode(user_calls + recursive_calls, 0, 1,user_calls + recursive_calls)),'909D90') ||'%' recursive,
