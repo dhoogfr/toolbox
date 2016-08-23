@@ -13,6 +13,6 @@ define ldepth = '&2'
 set termout on
 
 
-!depth=&ldepth; for i in `echo ./ $SQLPATH | tr ':' ' '`; do echo ; echo $i; echo ; cd $i ; find ./ -maxdepth "${depth:-1}" -iname "*&1*.sql"  2> /dev/null; done
+!depth=&ldepth; for i in `echo ./ $SQLPATH | tr ':' ' '`; do echo ; echo $i; echo ; cd $i ; find ./ -maxdepth "${depth:-1}" -iname "*&1*.sql" -printf "   * %P\n" 2> /dev/null; done
 
 undefine 2
