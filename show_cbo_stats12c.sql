@@ -12,7 +12,7 @@ column avg_row_len heading "Average|Row Len" format 990
 column avg_space heading "Average|Space" format 9G990
 column blev heading "B|Tree|Level" format 90
 column blevel heading "Blevel" format 999999
-column blocks heading "Blocks" format 999G990
+column blocks heading "Blocks" format 9G999G990
 column chain_cnt heading "Chain|Count" format 990
 column clustering_factor heading "Cluster|Factor" format 999G999G990
 column col heading "Column|Details" format a24
@@ -48,14 +48,14 @@ column nbr_directives heading "#Directives" format 9G999G999
 column notes heading "Notes" format a20
 column nullable heading "Null|Table" format a4
 column num_buckets heading "Number|Buckets" format 990
-column num_distinct heading "Distinct|Values" format 99G990
-column num_nulls heading "Number|Nulls" format 99G990
-column num_rows heading "Number|Of Rows" format 9G999G990
+column num_distinct heading "Distinct|Values" format 9G999G990
+column num_nulls heading "Number|Nulls" format 999G990
+column num_rows heading "Number|Of Rows" format 999G999G990
 column object_name heading "Object Name" format a30
 column object_type heading "Object Type" format a15
 column partition_name heading "Partition|Name" format a30
 column partition_type heading "Partition|Type" format a9
-column sample_size heading "Sample|Size" format 9G999G990
+column sample_size heading "Sample|Size" format 999G999G990
 column scope heading "Scope" format a8
 column stale_stats heading "Stale" format a5
 column stattype_locked heading "Stats|Lock" format a5
