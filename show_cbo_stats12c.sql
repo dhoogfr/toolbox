@@ -151,12 +151,12 @@ BEGIN
         owner = '&_owner'
         and table_name = '&_table_name'
         --apply optional filter on the partitions listed
-        and ( partition_name = nvl('&_tab_part_name', partition_name)
+        and ( partition_name like nvl('&_tab_part_name', partition_name)
               or partition_name is null
-              or subpartition_name = nvl('&_tab_subpart_name', subpartition_name)
+              or subpartition_name like nvl('&_tab_subpart_name', subpartition_name)
             )
         --apply optional filter on the sub partitions listed
-        and ( subpartition_name = nvl('&_tab_subpart_name', subpartition_name)
+        and ( subpartition_name like nvl('&_tab_subpart_name', subpartition_name)
               or subpartition_name is null
             )
       order by
@@ -351,7 +351,7 @@ BEGIN
           atp.table_owner = '&_owner'
           and atp.table_name = '&_table_name'
           --apply optional filter on the partitions listed
-          and atp.partition_name = nvl('&_tab_part_name', atp.partition_name)
+          and atp.partition_name like nvl('&_tab_part_name', atp.partition_name)
         order by
           atp.partition_position,
           atc.column_id nulls last,
@@ -428,11 +428,11 @@ BEGIN
           atp.table_owner = '&_owner'
           and atp.table_name = '&_table_name'
           --apply optional filter on the partitions listed
-          and ( atsp.partition_name = nvl('&_tab_part_name', atsp.partition_name)
-                or atsp.subpartition_name = nvl('&_tab_subpart_name', atsp.subpartition_name)
+          and ( atsp.partition_name like nvl('&_tab_part_name', atsp.partition_name)
+                or atsp.subpartition_name like nvl('&_tab_subpart_name', atsp.subpartition_name)
               )
           --apply optional filter on the sub partitions listed
-          and atsp.subpartition_name = nvl('&_tab_subpart_name', atsp.subpartition_name)
+          and atsp.subpartition_name like nvl('&_tab_subpart_name', atsp.subpartition_name)
         order by
           atp.partition_position,
           atsp.subpartition_position,
@@ -509,7 +509,7 @@ BEGIN
           ind.table_owner = '&_owner'
           and ind.table_name = '&_table_name'
           --apply optional filter on the indexes listed
-          and ind.index_name = nvl('&_index_name', ind.index_name)
+          and ind.index_name like nvl('&_index_name', ind.index_name)
         order by
           ind.index_name, 
           inc.column_position
@@ -573,14 +573,14 @@ BEGIN
           table_owner = '&_owner'
           and table_name = '&_table_name'
           --apply optional filter on the indexes listed
-          and index_name = nvl('&_index_name', index_name)
+          and index_name like nvl('&_index_name', index_name)
           --apply optional filter on the partitions listed
-          and ( partition_name = nvl('&_ind_part_name', partition_name)
+          and ( partition_name like nvl('&_ind_part_name', partition_name)
                 or partition_name is null
-                or subpartition_name = '&_ind_subpart_name'
+                or subpartition_name like '&_ind_subpart_name'
               )
           --apply optional filter on the sub partitions listed
-          and ( subpartition_name = nvl('&_ind_subpart_name', subpartition_name)
+          and ( subpartition_name like nvl('&_ind_subpart_name', subpartition_name)
                 or subpartition_name is null
               )
         order by
