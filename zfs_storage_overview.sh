@@ -1,4 +1,15 @@
-ssh -T root@zfsexa01c1.kpno.be <<EOF 
+#!/bin/bash
+
+### check all the ZFS pools and shares
+### pass the admin hostname (or ip) for the ZFS you want to check
+
+if [ "$#" -ne 1 ]
+then
+  echo "usage: $0 <zfs admin name>"
+  exit 1
+fi
+
+ssh -T root@${1} <<EOF 
 script  
   run('cd /')
   run('status');
@@ -44,3 +55,4 @@ script
 .
 exit
 EOF
+
