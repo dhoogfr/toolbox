@@ -10,3 +10,5 @@ from  x$ksppi x, x$ksppcv y
 where (x.indx = y.indx)
       and ksppinm like '&name'
 order by ksppinm, x.inst_id;
+
+undef name
