@@ -1,5 +1,7 @@
 column counted format 9G999G999G999
 
+accept OWNER prompt 'Owner Name: '
+
 break on report on stattype_locked skip 2 on last_analyzed_day skip 1
 
 compute sum of counted on last_analyzed_day 
@@ -74,3 +76,5 @@ order by
 
 clear breaks
 clear computes
+
+undef OWNER
