@@ -1,4 +1,5 @@
 column status format a15
+column description format a60
 
 select
   patch_id, 
