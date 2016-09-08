@@ -152,6 +152,34 @@ order by
 
 
 prompt
+prompt Autotask client History
+prompt =======================
+prompt
+
+
+break on window_start_time_str on window_end_time_str on duration on window_name skip 1
+
+select 
+  window_name, 
+  to_char(window_start_time, 'DD/MM/YYYY HH24:MI:SS TZH:TZM') window_start_time_str,
+  to_char(window_end_time, 'DD/MM/YYYY HH24:MI:SS TZH:TZM')   window_end_time_str,
+  window_duration                                             duration, 
+  client_name, 
+  jobs_created, 
+  jobs_started, 
+  jobs_completed 
+from 
+  dba_autotask_client_history 
+order by 
+  window_start_time,
+  window_name, 
+  client_name
+;
+
+clear breaks
+
+
+prompt
 prompt Current Running Autotasks
 prompt =========================
 prompt
