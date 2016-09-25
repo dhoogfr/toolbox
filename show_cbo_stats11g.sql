@@ -6,23 +6,23 @@ set long 50000
 set scan on
 
 column alignment heading "Alignment" format a12
-column avg_data_blocks_PER_KEY heading "Average|Data Blocks|Per Key" format 99G990
-column avg_leaf_blocks_PER_KEY heading "Average|Leaf Blocks|Per Key" format 99G990
+column avg_data_blocks_per_key heading "Average|Data Blocks|Per Key" format 999G999G990
+column avg_leaf_blocks_per_key heading "Average|Leaf Blocks|Per Key" format 999G999G990
 column avg_row_len heading "Average|Row Len" format 990
 column avg_space heading "Average|Space" format 9G990
 column blev heading "B|Tree|Level" format 90
 column blevel heading "Blevel" format 999999
-column blocks heading "Blocks" format 999G990
+column blocks heading "Blocks" format 9G999G990
 column chain_cnt heading "Chain|Count" format 990
 column clustering_factor heading "Cluster|Factor" format 999G999G990
-column col heading "Column|Details" format a24
+column col heading "Column|Details" format a25
 column column_expression heading "Expression" format a40
 column column_length heading "Col|Len" format 990
 column column_name  heading "Column|Name" format a30
 column column_position heading "Col|Pos" format 990
 column creator heading "Creator" format a7
 column density heading "Density" format 990
-column distinct_keys heading "Distinct|Keys" format 9G999G990
+column distinct_keys heading "Distinct|Keys" format 999G999G990
 column droppable heading "Dropable" format a8
 column empty_blocks heading "Empty|Blocks" format 999G990
 column extension heading "Extension" format a100
@@ -32,19 +32,19 @@ column histogram heading "Histogram" format a15
 column index_name heading "Index|Name" format a30
 column index_type heading "Index Type" format a15
 column last_analyzed_str heading "Date|DD/MM/YYYY" format a10
-column leaf_blocks heading "Leaf|Blks" format 99990
+column leaf_blocks heading "Leaf|Blks" format 999G999G990
 column locality heading "Locality" format a8
 column nbr_directives heading "#Directives" format 9G999G999
 column nullable heading "Null|Table" format a4
 column num_buckets heading "Number|Buckets" format 990
-column num_distinct heading "Distinct|Values" format 99G990
-column num_nulls heading "Number|Nulls" format 99G990
-column num_rows heading "Number|Of Rows" format 9G999G990
+column num_distinct heading "Distinct|Values" format 999G999G990
+column num_nulls heading "Number|Nulls" format 999G999G990
+column num_rows heading "Number|Of Rows" format 999G999G990
 column object_name heading "Object Name" format a30
 column object_type heading "Object Type" format a15
 column partition_name heading "Partition|Name" format a30
 column partition_type heading "Partition|Type" format a9
-column sample_size heading "Sample|Size" format 9G999G990
+column sample_size heading "Sample|Size" format 999G999G990
 column stale_stats heading "Stale" format a5
 column stattype_locked heading "Stats|Lock" format a5
 column status heading "Status" format a6
