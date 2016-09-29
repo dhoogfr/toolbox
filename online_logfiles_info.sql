@@ -1,11 +1,11 @@
 set pagesize 9999
 set linesize 150
-column member format a75
+column member format a80
 column type format a10
 column status format a10
 column arch format a4
 column thread# format 99 heading THREAD#
-column group# format 99 heading GROUP#
+column group# format 999 heading GROUP#
 
 break on type on thread# nodup skip 1 on type nodup on GROUP# nodup
 
