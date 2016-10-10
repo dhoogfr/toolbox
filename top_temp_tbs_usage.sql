@@ -23,6 +23,19 @@ as
     where
       temp_space_allocated is not null
       and sample_time between to_date('&bdate', 'DD/MM/YYYY HH24:MI') and to_date('&edate', 'DD/MM/YYYY HH24:MI')
+    union
+    select
+      sample_time,
+      nvl(qc_instance_id, inst_id) inst_id,
+      nvl(qc_session_id, session_id) sess_id,
+      nvl(qc_session_serial#, session_serial#) sess_serial#,
+      sql_id,
+      temp_space_allocated
+    from
+      gv$active_session_history
+    where
+      temp_space_allocated is not null
+      and sample_time between to_date('&bdate', 'DD/MM/YYYY HH24:MI') and to_date('&edate', 'DD/MM/YYYY HH24:MI')
   ),
 grouped_samples
 as
