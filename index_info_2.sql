@@ -1,7 +1,8 @@
-set linesize 150
+set linesize 300
 set long 30
 set verify off
 
+column index_name format a30
 column column_name format a30
 column column_position format 99 heading CP
 column uniqueness format a1 heading U
