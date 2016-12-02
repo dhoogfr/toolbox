@@ -23,15 +23,15 @@ column column_position heading "Col|Pos" format 990
 column creator heading "Creator" format a7
 column density heading "Density" format 990
 column directive_auto_drop heading "Auto|Drop" format a4
-column directive_crea_str heading "Created" format a10
+column directive_crea_str heading "Created" format a16
 column directive_enabled heading "Enabled" format a7
 column directive_id heading "Directive ID" format 999999999999999999999
-column directive_mod_str heading "Modified" format a10
+column directive_mod_str heading "Modified" format a16
 column directive_notes heading "Notes" format a200 word_wrapped
 column directive_reason heading "Reason" format a30 word_wrapped
 column directive_state heading "State" format a10
 column directive_type heading "Type" format a16
-column directive_used_str heading "Used" format a10
+column directive_used_str heading "Used" format a16
 column distinct_keys heading "Distinct|Keys" format 9G999G990
 column droppable heading "Dropable" format a8
 column empty_blocks heading "Empty|Blocks" format 999G990
@@ -682,15 +682,15 @@ BEGIN
           pdo.object_type,
           pdo.object_name,
           pdo.subobject_name,
-          pd.type                                     directive_type,
-          pd.enabled                                  directive_enabled,
-          pd.state                                    directive_state,
-          pd.auto_drop                                directive_auto_drop,
-          pd.reason                                   directive_reason,
-          to_char(pd.created, 'DD/MM/YYYY')           directive_crea_str,
-          to_char(pd.last_modified, 'DD/MM/YYYY')     directive_mod_str,
-          to_char(pd.last_used, 'DD/MM/YYYY')         directive_used_str,
-          pd.notes                                    directive_notes
+          pd.type                                                directive_type,
+          pd.enabled                                             directive_enabled,
+          pd.state                                               directive_state,
+          pd.auto_drop                                           directive_auto_drop,
+          pd.reason                                              directive_reason,
+          to_char(pd.created, 'DD/MM/YYYY HH24:MI')              directive_crea_str,
+          to_char(pd.last_modified, 'DD/MM/YYYY HH24:MI')        directive_mod_str,
+          to_char(pd.last_used, 'DD/MM/YYYY HH24:MI')            directive_used_str,
+          pd.notes                                               directive_notes
         from
           dba_sql_plan_dir_objects          pdo
             join dba_sql_plan_directives    pd
