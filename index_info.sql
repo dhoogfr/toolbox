@@ -1,10 +1,13 @@
-set linesize 150
+set linesize 300
+set long 100
+set verify off
+
 column owner format a20
 column index_type format a15
 column partition_name format a15
 column subpartition_name format a15
 
-select ind.owner,ind.index_name, ind.index_type, inp.partition_name, inps.subpartition_name,
+select ind.owner,ind.index_name, ind.index_type, ind.visibility, inp.partition_name, inps.subpartition_name,
        ind.status index_status, inp.status part_status, inps.status subpart_status
 from dba_indexes ind, dba_ind_partitions inp, dba_ind_subpartitions inps 
 where ind.index_name = inp.index_name(+)
@@ -14,5 +17,7 @@ where ind.index_name = inp.index_name(+)
       and inp.partition_name = inps.partition_name(+)
       and ind.table_owner='&owner'
       and ind.table_name = '&table_name'
+      and ind.dropped = 'NO'
 order by 1,2,4,5;
 
+set verify on
