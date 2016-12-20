@@ -14,19 +14,19 @@ set trimspool on
 
 
 --  initialize spoolfile
-column dcol new_value spoolname noprint
-column inputpar01 new_value 1 noprint
-select 1 inputpar01 from dual where 1=2;
+--column dcol new_value spoolname noprint
+--column inputpar01 new_value 1 noprint
+--select 1 inputpar01 from dual where 1=2;
 
-select
-  nvl('&1', db_unique_name || '_' || to_char(sysdate,'YYYYMMDDHH24MISS') || '_memory_report.log') dcol 
-from 
-  v$database
-;
+--select
+--  nvl('&1', db_unique_name || '_' || to_char(sysdate,'YYYYMMDDHH24MISS') || '_memory_report.log') dcol
+--from
+--  v$database
+--;
 
-undefine 1
+--undefine 1
 
-spool &spoolname
+--spool &spoolname
 
 
 --- db and platform identification
@@ -40,7 +40,7 @@ column name format a15
 column db_unique_name format a20
 
 select
-  dbid, name, db_unique_name, database_role, platform_name 
+  dbid, name, db_unique_name, database_role, platform_name
 from
   v$database
 ;
@@ -50,7 +50,7 @@ prompt
 
 select
   instance_number, instance_name, host_name, version
-from 
+from
   gv$instance
 order by
   instance_number
@@ -70,11 +70,11 @@ set linesize 150
 select ksppinm name, ksppstvl value, ksppstdf isdefault, x.inst_id inst_id, ksppdesc description
 from  x$ksppi x, x$ksppcv y
 where (x.indx = y.indx)
-      and ksppinm in 
-        ( 'sga_target', 'sga_max_target', 'memory_target', 'db_cache_size', 
-          'db_2k_cache_size', 'db_4k_cache_size', 'db_8k_cache_size', 
-          'db_16k_cache_size', 'db_32k_cache_size', 'db_keep_cache_size', 
-          'db_recycle_cache_size', 'java_pool_size', 'large_pool_size', 
+      and ksppinm in
+        ( 'sga_target', 'sga_max_target', 'memory_target', 'db_cache_size',
+          'db_2k_cache_size', 'db_4k_cache_size', 'db_8k_cache_size',
+          'db_16k_cache_size', 'db_32k_cache_size', 'db_keep_cache_size',
+          'db_recycle_cache_size', 'java_pool_size', 'large_pool_size',
           'olap_page_pool_size'
         )
 order by ksppinm, x.inst_id;
@@ -100,7 +100,7 @@ compute sum of curr_mb on report
 
 break on report
 
-select component, current_size/1024/1024 curr_mb, min_size/1024/1024 min_mb, max_size/1024/1024 max_mb, 
+select component, current_size/1024/1024 curr_mb, min_size/1024/1024 min_mb, max_size/1024/1024 max_mb,
        user_specified_size/1024/1024 user_mb, granule_size/1024/1024 granule_mb
 from v$sga_dynamic_components
 order by component;
@@ -122,8 +122,8 @@ column final_mb format 999G999D99
 column component format a30
 
 select *
-from  ( select to_char(start_time, 'DD/MM/YYYY HH24:MI:SS') start_time, to_char(end_time, 'DD/MM/YYYY HH24:MI:SS') end_time, 
-               component, oper_type, oper_mode, initial_size/1024/1024 initial_mb, target_size/1024/1024 target_mb, 
+from  ( select to_char(start_time, 'DD/MM/YYYY HH24:MI:SS') start_time, to_char(end_time, 'DD/MM/YYYY HH24:MI:SS') end_time,
+               component, oper_type, oper_mode, initial_size/1024/1024 initial_mb, target_size/1024/1024 target_mb,
                final_size/1024/1024 final_mb, status
         from v$sga_resize_ops a
         order by a.start_time desc
@@ -188,7 +188,7 @@ with
        parsing_schema_id
    )
 select
-  username, cursor_cnt, unique_cursor_cnt, max_child_cnt, 
+  username, cursor_cnt, unique_cursor_cnt, max_child_cnt,
   sharable_mem_kb, persistent_mem_kb, runtime_mem_kb
 from
   mchild,
@@ -254,4 +254,4 @@ from v$sgastat
 order by pool, name;
 
 --- END OF SCRIPT
-spool off
+--spool off
