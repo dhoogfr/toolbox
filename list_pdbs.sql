@@ -1,11 +1,20 @@
-set linesize 200
 set pages 50000
+set linesize 300
 
-column bundle_series format a15
-column action_time format a30
-column version format a12
-column description format a60
+column name format a30
+column state format a14
+column restricted format a10
+column open_time_str format a26
+column total_size_gb format 999G999D99
 
-select patch_id, version, action, status, action_time, bundle_series, description from dba_registry_sqlpatch order by action_time desc;
-
-select con_id, con_uid, name, open_mode, open_time from v$pdbs;
+select
+  name,
+  open_mode,
+  restricted,
+  to_char(open_time, 'DD/MM/YYYY HH24:MI:SS TZH:TZM') open_time_str,
+  (total_size/1024/1024/1024) total_size_gb
+from
+  v$containers
+order by 
+  name
+;
