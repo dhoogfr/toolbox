@@ -113,8 +113,11 @@ prompt
 prompt SGA RESIZE OPERATIONS
 prompt ---------------------
 
-set linesize 140
+set linesize 250
 set pages 9999
+
+column start_time format a20
+column end_time format a20
 
 column initial_mb format 999G999D99
 column target_mb format 999G999D99
