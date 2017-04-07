@@ -29,9 +29,14 @@ prompt ...................
 
 select * from v$version;
 @list_db_patches.sql
+
+column value clear
+column value format 999G999G999G999G999D99
+column value clear
+
 select * from v$osstat order by stat_name;
 
-
+prompt
 prompt tablespace and datafiles details
 prompt ................................
 
@@ -80,6 +85,6 @@ prompt ..............
 @top_segments_size.sql
 set linesize 300
 @top_seg_history.sql
-@tblspace_growth.sql
+@tblspace_growth_per_day.sql
 
 spool off;
