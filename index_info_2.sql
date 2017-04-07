@@ -8,11 +8,12 @@ column column_position format 99 heading CP
 column uniqueness format a1 heading U
 column visibility format a10
 column column_expression format a100
+column descend format a10
 
 break on index_name skip 1 on index_type on uniqueness on status on visibility
 
 select ind.index_name, ind.index_type, decode(ind.uniqueness,'UNIQUE', 'Y', 'N') uniqueness, ind.status,
-       ind.visibility, inc.column_name, inc.column_position, ine.column_expression
+       ind.visibility, inc.column_name, inc.column_position, inc.descend, ine.column_expression
 from dba_indexes ind, dba_ind_columns inc, dba_ind_expressions ine
 where ind.owner = inc.index_owner
       and ind.index_name = inc.index_name
