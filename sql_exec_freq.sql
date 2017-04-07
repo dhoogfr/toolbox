@@ -1,7 +1,7 @@
 set linesize 150
 set pages 999
 column avg_elapsed_sec format 99G999D99
-column disk_reads format 9G999G99G999
+column disk_reads format 9G999G999G999
 column buffer_gets format 999G999G999
 
 select
