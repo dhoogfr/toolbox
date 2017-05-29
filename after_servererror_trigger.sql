@@ -51,5 +51,13 @@ BEGIN
         values (id, sysdate, ora_server_error_msg(n),stmt, ora_login_user);
     end loop;
 
+EXCEPTION
+
+  -- not pretty, but....
+  -- avoid blocking programs because of malfunctioning error logging
+  when others then
+    null;
+
+
 END LOG_ERRORS_TRIG;
 /
