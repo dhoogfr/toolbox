@@ -8,7 +8,7 @@ break on tablespace_name skip 1
 set linesize 150
 set pagesize 999
 
-select A.tablespace_name, file_name, bytes/1024/1024 curr_mb, autoextensible, 
+select A.tablespace_name, file_id, file_name, bytes/1024/1024 curr_mb, autoextensible,
        maxbytes/1024/1024 max_mb, (increment_by * block_size)/1024/1024 incr_mb
 from ( select tablespace_name, file_id, file_name, bytes, autoextensible, maxbytes,
               increment_by
