@@ -1,7 +1,7 @@
 set linesize 250
 column bundle_series format a15
 column status format a15
-column description format a60
+column description format a65
 column action_time format a20
 
 select

@@ -1,9 +1,9 @@
-set linesize 140
+set linesize 250
 set pagesize 999
 
 column sid format a15
 column sql_text format a50 word_wrapped
-column size_mb format 9G999D99
+column size_mb format 999G999D99
 
 
 select
