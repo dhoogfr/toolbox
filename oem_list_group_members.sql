@@ -14,7 +14,7 @@ where
   and ( ( trgt.target_type = 'oracle_database' 
           and trgt.type_qualifier3 != 'RACINST'
         )
-        or trgt.target_type in ('rac_database', 'host', 'osm_cluster', 'oracle_si_virtual_platform', 'oracle_si_server', 'oracle_exadata_grid')
+        or trgt.target_type in ('oracle_pdb', 'rac_database', 'host', 'osm_cluster', 'oracle_si_virtual_platform', 'oracle_si_server', 'oracle_exadata_grid')
       )
   and ( composite_target_guid is null 
         or composite_target_guid not in
