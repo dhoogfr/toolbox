@@ -1,6 +1,7 @@
 column trigger_name format a30
 column trigger_type format a30
 column triggering_event format a30
+column when_clause format a200
 column trigger_body format a200
 column table_name format a30
 
@@ -13,6 +14,7 @@ select
   trigger_type,
   triggering_event,
   status,
+  when_clause,
   trigger_body 
 from
   dba_triggers
