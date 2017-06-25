@@ -32,7 +32,7 @@ column directive_reason heading "Reason" format a30 word_wrapped
 column directive_state heading "State" format a10
 column directive_type heading "Type" format a16
 column directive_used_str heading "Used" format a16
-column distinct_keys heading "Distinct|Keys" format 9G999G990
+column distinct_keys heading "Distinct|Keys" format 999G999G990
 column droppable heading "Dropable" format a8
 column empty_blocks heading "Empty|Blocks" format 999G990
 column extension heading "Extension" format a100
@@ -42,14 +42,14 @@ column histogram heading "Histogram" format a15
 column index_name heading "Index|Name" format a30
 column index_type heading "Index Type" format a15
 column last_analyzed_str heading "Date|DD/MM/YYYY" format a10
-column leaf_blocks heading "Leaf|Blks" format 99990
+column leaf_blocks heading "Leaf|Blks" format 999G999G990
 column locality heading "Locality" format a8
 column nbr_directives heading "#Directives" format 9G999G999
 column notes heading "Notes" format a20
 column nullable heading "Null|Table" format a4
 column num_buckets heading "Number|Buckets" format 990
-column num_distinct heading "Distinct|Values" format 9G999G990
-column num_nulls heading "Number|Nulls" format 999G990
+column num_distinct heading "Distinct|Values" format 999G999G990
+column num_nulls heading "Number|Nulls" format 999G999G990
 column num_rows heading "Number|Of Rows" format 999G999G990
 column object_name heading "Object Name" format a30
 column object_type heading "Object Type" format a15
