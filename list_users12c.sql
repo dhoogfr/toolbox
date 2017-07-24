@@ -11,11 +11,11 @@ column created format a10
 column lock_date format a10
 column expiry_date format a11
 column profile format a25
-column account_status format a25
+column account_status format a20
 column default_tablespace format a20
 column temporary_tablespace format a20
 --column password format a20
---column password_versions format a10 heading "P VERSIONS"
+column password_versions format a17 heading "PWD VERSIONS"
 --column default_consumer_group format a25 heading "INITIAL CONSUMER GROUP"
 column authentication_type format a10 heading "PWD TYPE"
 column password_change_date format a12 heading "LAST PWD|CHANGE DATE"
@@ -52,10 +52,15 @@ select
                    'EXTERNAL', 'EXTERNAL',
                    'PASSWORD') authentication_type,
   decode(bitand(u.spare1, 128), 128, 'YES', 'NO') common,
-       decode(bitand(u.spare1, 256), 256, 'Y', 'N') oracle_maintained
+  decode(bitand(u.spare1, 256), 256, 'Y', 'N') oracle_maintained,
 --  u.password password,
 --  nvl(cgm.consumer_group, 'DEFAULT_CONSUMER_GROUP') initial_rsrc_consumer_group,
 --  decode(length(u.password),16,'10G ',NULL)||NVL2(u.spare4, '11G ' ,NULL) password_versions
+    ( decode (regexp_instr (nvl2 (u.password, u.password, ' '), '^                $'), 0, decode(length(u.password), 16, '10G ', NULL), '' ) || 
+      decode (regexp_instr (regexp_replace (nvl2 (u.spare4, u.spare4, ' '),'S:000000000000000000000000000000000000000000000000000000000000', 'not_a_verifier'), 'S:'), 0, '', '11G ') ||
+      decode (regexp_instr (nvl2 (u.spare4, u.spare4, ' '), 'T:'), 0, '', '12C ') ||
+      decode (regexp_instr (regexp_replace ( nvl2(u.spare4, u.spare4, ' '), 'H:00000000000000000000000000000000', 'not_a_verifier'), 'H:'), 0, '', 'HTTP ')
+    ) password_versions
 from 
   sys.user$ u 
     left outer join sys.resource_group_mapping$ cgm
