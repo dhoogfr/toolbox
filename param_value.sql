@@ -6,7 +6,7 @@ column default_value format a25
 column description format a40 word_wrapped
 set linesize 250
 
-select ksppinm name, ksppstvl value, ksppstdf isdefault, ksppstdvl default_value, x.inst_id inst_id, ksppdesc description
+select ksppinm name, ksppstvl value, ksppstdf isdefault, ksppstdfl default_value, x.inst_id inst_id, ksppdesc description
 from  x$ksppi x, x$ksppcv y
 where (x.indx = y.indx)
       and ksppinm like '&name'
