@@ -10,9 +10,9 @@ column username format a30
 column created format a10
 column lock_date format a10
 column expiry_date format a11
-column profile format a25
-column account_status format a20
-column default_tablespace format a20
+column profile format a20
+column account_status format a17
+column default_tablespace format a30
 column temporary_tablespace format a20
 --column password format a20
 column password_versions format a17 heading "PWD VERSIONS"
@@ -20,8 +20,8 @@ column password_versions format a17 heading "PWD VERSIONS"
 column authentication_type format a10 heading "PWD TYPE"
 column password_change_date format a12 heading "LAST PWD|CHANGE DATE"
 column last_login format a22 heading "LAST LOGIN"
-column oracle_maintained format a3 heading "DEF"
-column common format a3 heading "COM"
+column oracle_maintained format a3 heading "D|E|F|A|U|L|T| |U|S|R"
+column common format a3 heading "C|O|M|M|O|N"
 
 select 
   u.name username, 
