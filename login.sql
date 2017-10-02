@@ -9,7 +9,7 @@ set serveroutput on size 1000000 format wrapped
 set trimspool on
 set tab off
 set long 5000
-set linesize 150
+set linesize 250
 set pagesize 50000
 
 REM used by trusted oracle
@@ -42,6 +42,10 @@ column name format a30
 column file_name format a30
 column what format a30 word_wrapped
 column host_name format a30
+column owner format a30
+column table_name format a30
+column index_name format a30
+column column_name format a30
 
 REM set the nls settings
 alter session set nls_numeric_characters=',.';
