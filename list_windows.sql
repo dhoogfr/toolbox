@@ -5,7 +5,8 @@ set pages 50000
 
 column owner format a30
 column window_name format a30
-column repeat_interval format a80
+column repeat_interval format a70
+column duration format a15
 column str_start_date format a40
 column str_next_start_date format a40
 
@@ -15,6 +16,7 @@ select
   enabled,
   to_char(start_date, 'DD/MM/YYYY HH24:MI:SS TZR') str_start_date,
   repeat_interval,
+  duration,
   to_char(next_start_date, 'DD/MM/YYYY HH24:MI:SS TZR') str_next_start_date
 from
   dba_scheduler_windows
