@@ -2207,3 +2207,5 @@ col sid_filter             clear
 col inst_filter            clear 
 
 set serveroutput off
+undef 1
+undef 2
