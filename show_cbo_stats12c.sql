@@ -8,11 +8,11 @@ set scan on
 column alignment heading "Alignment" format a12
 column avg_data_blocks_PER_KEY heading "Average|Data Blocks|Per Key" format 99G990
 column avg_leaf_blocks_PER_KEY heading "Average|Leaf Blocks|Per Key" format 99G990
-column avg_row_len heading "Average|Row Len" format 990
+column avg_row_len heading "Average|Row Len" format 9G990
 column avg_space heading "Average|Space" format 9G990
 column blev heading "B|Tree|Level" format 90
 column blevel heading "Blevel" format 999999
-column blocks heading "Blocks" format 9G999G990
+column blocks heading "Blocks" format 999G999G990
 column chain_cnt heading "Chain|Count" format 990
 column clustering_factor heading "Cluster|Factor" format 999G999G990
 column col heading "Column|Details" format a24
@@ -45,7 +45,7 @@ column last_analyzed_str heading "Date|DD/MM/YYYY" format a10
 column leaf_blocks heading "Leaf|Blks" format 999G999G990
 column locality heading "Locality" format a8
 column nbr_directives heading "#Directives" format 9G999G999
-column notes heading "Notes" format a20
+column notes heading "Notes" format a30
 column nullable heading "Null|Table" format a4
 column num_buckets heading "Number|Buckets" format 990
 column num_distinct heading "Distinct|Values" format 999G999G990

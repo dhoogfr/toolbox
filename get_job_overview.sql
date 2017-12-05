@@ -153,6 +153,7 @@ prompt -----------------
 clear breaks
 set linesize 150
 column window_next_time format a45
+column window_name format a30
 
 select
   * 

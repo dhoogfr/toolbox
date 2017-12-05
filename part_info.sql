@@ -1,20 +1,23 @@
 -- show information about a partitoned table
 
 set verify off
-set linesize 250
+set linesize 300
 
 column owner format a30
 column table_name format a30
 column column_name format a30
 column interval format a40
-column high_value format a25
+#column high_value format a25
+column high_value format a85
 column interval format a3
 column subpartition_count format 9999999 heading "#SUBPART"
 column partition_name format a30
 column subpartition_name format a30
 column column_position format 99999
 column interval format a3
-column subpartition_position format 99999
+column subpartition_position format 99999 heading "POS"
+column partition_position format 99999 heading "POS"
+column MB format 9G999G990D99
 
 accept OWNER prompt 'Owner: '
 accept TABLE prompt 'Table Name: '
