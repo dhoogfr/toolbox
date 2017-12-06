@@ -66,10 +66,13 @@ column subpartition_type heading "Sub Partition|Type" format a13
 column table_name heading "Table|Name" format a30
 column uniqueness heading "Unique" format a9
 column user_stats heading "User|Stats" format a6
+column preference_name heading "Preference" format a30
+column preference_value heading "Value" format a200
 
 -- cleanup any dangling variables
 undefine _owner
 undefine _table_name
+undefine _show_tab_prefs
 undefine _table_stats
 undefine _tab_part_name
 undefine _tab_subpart_name
@@ -93,6 +96,7 @@ set termout on
 prompt
 accept _owner default &_default_owner prompt 'Table owner (default &_default_owner): '
 accept _table_name prompt 'Table name: '
+accept _show_tab_prefs default 'NO' prompt 'Display table prefs (YES|NO, default NO): '
 accept _table_stats default 'YES' prompt 'Display table stats (YES|NO, default YES): '
 accept _tab_part_name default '' prompt 'Table partition name (default = no filter, / = none): '
 accept _tab_subpart_name default '' prompt 'Table sub partition name (default = no filter, / = none): '
@@ -111,6 +115,45 @@ set serveroutput on
 
 -- actual reporting starts here
 
+-- table stat preferences
+BEGIN
+
+  if upper('&_show_tab_prefs') = 'YES'
+  then
+
+    dbms_output.new_line;
+    dbms_output.new_line;
+    dbms_output.put_line('******************');
+    dbms_output.put_line('Table Preferences');
+    dbms_output.put_line('******************');
+
+    open :c_result for
+      select
+        preference_name,
+        preference_value
+      from
+        dba_tab_stat_prefs
+      where
+        owner = '&_owner'
+        and table_name = '&_table_name'
+      order by
+        preference_name
+      ;
+
+  else
+    open :c_result for
+      select
+        *
+      from
+        dual
+      where
+        1 = 0
+      ;
+
+  end if;
+
+END;
+/
 
 -- table statistics
 break on object_type skip 1 duplicates
