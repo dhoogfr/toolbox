@@ -15,7 +15,7 @@ set termout on
 
 
 -- actual search, if no depth has been given, the depth is set to 1
-!depth=&ldepth; for i in `echo ./ $SQLPATH | tr ':' ' '`; do echo ; echo $i; echo ; cd $i ; find ./ -maxdepth "${depth:-1}" -iname "*&1*.sql" -printf "   * %P\n" 2> /dev/null; done
+!depth=&ldepth; for i in `echo ./ ${ORACLE_PATH:-${SQLPATH}} | tr ':' ' '`; do echo ; echo $i; echo ; cd $i ; find ./ -maxdepth "${depth:-1}" -iname "*&1*.sql" -printf "   * %P\n" 2> /dev/null; done
 
 
 -- cleanup
