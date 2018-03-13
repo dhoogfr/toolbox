@@ -1,5 +1,5 @@
 /* list the history of the optimizer statistic operations
-   optionally filters on the target name (first parameter which supports wildcards)
+   optionally filters on the start time in the format DD/MM/YYYY and the target name (which supports wildcards)
 */
 
 set verify off
@@ -7,6 +7,8 @@ set verify off
 set feedback off
 column inputpar01 new_value 1 noprint
 select 1 inputpar01 from dual where 1=2;
+column inputpar02 new_value 2 noprint
+select 2 inputpar02 from dual where 1=2;
 set feedback 6
 
 
@@ -43,9 +45,11 @@ from
       on ( op.id = tc.opid
          )
 where
-  nvl(target, ' ') like nvl('&1', '%')
+  start_time >= to_date(nvl('&1','01/01/1970'), 'DD/MM/YYYY')
+  and nvl(target, ' ') like nvl('&2', '%')
 order by
   id
 ;
 
 undef 1
+undef 2

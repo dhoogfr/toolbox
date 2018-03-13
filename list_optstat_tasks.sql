@@ -1,7 +1,7 @@
 /* list the optimizer statistic operation tasks
    
    The script will ask for an optionally filter on the operation id (can be listed via the list_optstat_history.sql script)
-   and an optional filter on the target name (supports wildcards)
+   and an optional filter on the target name (supports wildcards) and the start time (DD/MM/YYYY)
    It will also ask if the notes column needs to be displayed (this is a large xml, so best only when filtering)
 */
 
@@ -21,6 +21,7 @@ column notes_xml format a220
 
 accept opid_filter number prompt "Filter on opertions id: "
 accept target_filter char prompt "Filter on target: "
+accept starttime_filter char prompt "Filter on start time (DD/MM/YYYY): "
 accept display_notes char default 'NO' prompt "Display notes column (YES|NO, default NO): "
 
 var c_result refcursor
@@ -47,9 +48,16 @@ BEGIN
   if '&target_filter' is not null then
     l_where := ' where ';
     l_filter := l_filter || l_concat || 'target like ''&target_filter''';
+    l_concat := ' and ';
+  end if;
+
+  if '&starttime_filter' is not null then
+    l_where := ' where ';
+    l_filter := l_filter || l_concat || 'start_time >= to_date(''&starttime_filter'', ''DD/MM/YYYY'')';
   end if;
 
   l_query := q'[select
+      opid,
       target,
       target_type,
       target_size nbr_blocks,
@@ -77,3 +85,4 @@ set feedback 6
 
 undef opid_filter
 undef target_filter
+undef starttime_filter
