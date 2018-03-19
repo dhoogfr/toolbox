@@ -74,13 +74,13 @@ where
   -- filter out temporary and dropped tables
   and (stat.owner, stat.table_name) not in
     ( select 
-        table_owner,
-        table_name
+        tab.owner,
+        tab.table_name
       from
-        dba_tables
+        dba_tables    tab
       where
-        temporary = 'Y'
-        or dropped =  'YES'
+        tab.temporary = 'Y'
+        or tab.dropped =  'YES'
     )
 order by
   stat.owner,
