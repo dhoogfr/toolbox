@@ -9,9 +9,9 @@ set pages 50000
 set tab off
 set echo off
 
-column db_name format a30 heading "Database"
+column db_name format a40 heading "Database"
 column rollup_timestamp_s format a10 heading "Day"
-column inst_name format a30 heading "Instance"
+column inst_name format a45 heading "Instance"
 column inst_logons format 9G999G999
 column db_logons format 999G999G999
 column inst_avg_active_sess format 9G999G990D99

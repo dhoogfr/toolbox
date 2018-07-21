@@ -3,12 +3,23 @@
 set linesize 300
 set pages 50000
 
-
-
 column user_name format a30
 column policy_name format a50
-
-select * from audit_unified_enabled_policies;
+column entity_name format a30
+select
+  policy_name,
+  user_name,
+  enabled_opt,
+  enabled_option,
+  entity_name,
+  entity_type,
+  success,
+  failure
+from
+  audit_unified_enabled_policies
+order by
+  policy_name
+;
 
 
 

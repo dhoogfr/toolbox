@@ -787,5 +787,6 @@ undefine _cbo_directives
 undefine _default_owner
 
 set autoprint off
+set feedback on
 
 -- the end

@@ -6,6 +6,7 @@ column action_time format a20
 
 select
   to_char(action_time, 'DD/MM/YYYY HH24:MI') action_time_str,
+  action,
   bundle_series,
   patch_id, 
   patch_uid, 

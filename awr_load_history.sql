@@ -28,12 +28,43 @@
    You can modify it on the first lines
 */
 
-set linesize 400
+set linesize 500
 set pagesize 9999
 alter session set nls_numeric_characters=',.';
 set trimspool on
+set tab off
 set verify off
 set feedback off
+
+column instance_number format 99
+column bsnap_id format 9999999
+column bsnap_time format a16
+column esnap_id format 9999999
+column esnap_time format a16
+column redo_blocks format 999999999990D999
+column logical_reads format 999999999990D999
+column block_changes format 999999999990D999
+column physical_reads format 999999999990D999
+column physical_writes format 999999999990D999
+column user_calls format 999999999990D999
+column parses format 999999999990D999
+column hard_parses format 999999999990D999
+column sorts format 999999999990D999
+column logons format 999999999990D999
+column executes format 999999999990D999
+column transactions format 999999999990D999
+column changes_per_read format a8
+column recursive format a8
+column rollback format a8
+column rows_per_sort format a18
+column cpusecs_pct format 99990D00
+column rec_cpusecs_pct format 99990D00
+column parse_cpusecs_pct format 99990D00
+column buffer_hit format a8
+column undo_records format 99999999999999999
+column rollbacks format 99999999999999999
+
+column a format a500
 
 prompt Enter the begindate in the format DD/MM/YYYY HH24:MI
 accept start_time prompt 'begin date: '
@@ -52,14 +83,14 @@ WITH p as
             ( partition by dbid, instance_number
               order by snap_id
             ) prev_snap_id,
-          begin_interval_time, end_interval_time          
+          begin_interval_time, end_interval_time
    from dba_hist_snapshot
    where begin_interval_time between
-            to_timestamp ('&start_time', 'DD/MM/YYYY HH24:MI') 
+            to_timestamp ('&start_time', 'DD/MM/YYYY HH24:MI')
             and to_timestamp ('&end_time', 'DD/MM/YYYY HH24:MI')
  ),
  s as
- ( select d.name database, p.dbid, p.instance_number, p.prev_snap_id bsnap_id, p.snap_id esnap_id, 
+ ( select d.name database, p.dbid, p.instance_number, p.prev_snap_id bsnap_id, p.snap_id esnap_id,
           p.begin_interval_time bsnap_time, p.end_interval_time esnap_time, bs.stat_name,
           round((es.value-bs.value)/(   extract(second from (p.end_interval_time - p.begin_interval_time))
                                       + extract(minute from (p.end_interval_time - p.begin_interval_time)) * 60
@@ -80,13 +111,14 @@ WITH p as
                and p.snap_id = es.snap_id
              )
          and ( bs.stat_id = es.stat_id
+               and bs.instance_number = es.instance_number
                and bs.stat_name=es.stat_name
              )
          and bs.stat_name in
            ( 'redo size','redo blocks written','session logical reads','db block changes','physical reads','physical writes','user calls',
              'parse count (total)','parse count (hard)','sorts (memory)','sorts (disk)','logons cumulative','execute count','user rollbacks',
              'user commits', 'recursive calls','sorts (rows)','CPU used by this session','recursive cpu usage','parse time cpu',
-             'rollback changes - undo records applied'
+             'rollback changes - undo records applied', 'DB time', 'Read IO (MB)', 'Write IO (MB)'
            )
  ),
 g as
@@ -113,21 +145,55 @@ g as
           sum(decode( stat_name, 'rollback changes - undo records applied' , valuepersecond, 0 )) undo_records,
           sum(decode( stat_name, 'CPU used by this session'                , valuepersecond/100, 0 )) cpusecs,
           sum(decode( stat_name, 'recursive cpu usage'                     , valuepersecond/100, 0 )) rec_cpusecs,
-          sum(decode( stat_name, 'parse time cpu'                          , valuepersecond/100, 0 )) parse_cpusecs
+          sum(decode( stat_name, 'parse time cpu'                          , valuepersecond/100, 0 )) parse_cpusecs,
+          sum(decode( stat_name, 'DB time'                                 , valuepersecond, 0 )) db_time,
+          sum(decode( stat_name, 'Read IO (MB)'                            , valuepersecond, 0 )) read_io_mb,
+          sum(decode( stat_name, 'Write IO (MB)'                           , valuepersecond, 0 )) write_io_mb
  from s
  group by database,instance_number, bsnap_id, esnap_id, bsnap_time, esnap_time
  )
-select instance_number, bsnap_id, to_char(bsnap_time,'DD-MON-YY HH24:MI') bsnap_time, esnap_id, to_char(esnap_time,'DD-MON-YY HH24:MI') esnap_time, redo_blocks, logical_reads, block_changes, physical_reads,
+/*select instance_number, bsnap_id, to_char(bsnap_time,'DD-MON-YY HH24:MI') bsnap_time_str, esnap_id, to_char(esnap_time,'DD-MON-YY HH24:MI') esnap_time_str,read_io_mb, write_io_mb
+     db_time, redo_blocks, logical_reads, block_changes, physical_reads,
        physical_writes, user_calls, parses, hard_parses, sorts, logons, executes, transactions,
-       to_char(100 * (block_changes / decode(logical_reads,0,1,logical_reads)),'909D90')||'%' changes_per_read,
-       to_char(100 * (recursive_calls / decode(user_calls + recursive_calls, 0, 1,user_calls + recursive_calls)),'909D90') ||'%' recursive,
-       to_char(100 * (rollbacks / decode(transactions,0,1,transactions)),'909D90') ||'%' rollback,
-       to_char(decode(sorts, 0, NULL, (sort_rows/sorts)),'999999') rows_per_sort,
+       to_char(100 * (block_changes / decode(logical_reads,0,1,logical_reads)),'990D00')||'%' changes_per_read,
+       to_char(100 * (recursive_calls / decode(user_calls + recursive_calls, 0, 1,user_calls + recursive_calls)),'990D00') ||'%' recursive,
+       to_char(100 * (rollbacks / decode(transactions,0,1,transactions)),'990D00') ||'%' rollback,
+       to_char(decode(sorts, 0, NULL, (sort_rows/sorts)),'99999999999999999') rows_per_sort,
        100 * cpusecs cpusecs_pct,
        100 * rec_cpusecs rec_cpusecs_pct,
        100 * parse_cpusecs parse_cpusecs_pct,
-       to_char(100 * (1 - physical_reads / decode(logical_reads, 0, 1,logical_reads)),'909D90') ||'%' buffer_hit,
+       to_char(100 * (1 - physical_reads / decode(logical_reads, 0, 1,logical_reads)),'990D00') ||'%' buffer_hit,
        undo_records, rollbacks
+*/select 
+    (instance_number ||';'|| 
+    bsnap_id ||';'|| 
+    to_char(bsnap_time,'DD-MON-YY HH24:MI') ||';'|| 
+    esnap_id ||';'|| 
+    to_char(esnap_time,'DD-MON-YY HH24:MI') ||';'|| 
+    db_time ||';' ||
+    redo_blocks ||';'|| 
+    logical_reads ||';'|| 
+    block_changes ||';'|| 
+    physical_reads ||';'|| 
+    physical_writes ||';'|| 
+    user_calls ||';'||  
+    parses ||';'|| 
+    hard_parses ||';'|| 
+    sorts ||';'|| 
+    logons ||';'|| 
+    executes ||';'|| 
+    transactions ||';'|| 
+    to_char(100 * (block_changes / decode(logical_reads,0,1,logical_reads)),'990D00')||'%' ||';'|| 
+    to_char(100 * (recursive_calls / decode(user_calls + recursive_calls, 0, 1,user_calls + recursive_calls)),'990D00') ||'%' ||';'|| 
+    to_char(100 * (rollbacks / decode(transactions,0,1,transactions)),'990D00') ||'%' ||';'|| 
+    to_char(decode(sorts, 0, NULL, (sort_rows/sorts)),'99999999999999999') ||';'|| 
+    100 * cpusecs ||';'|| 
+    100 * rec_cpusecs ||';'|| 
+    100 * parse_cpusecs ||';'|| 
+--    to_char(100 * (1 - physical_reads / decode(logical_reads, 0, 1,logical_reads)),'990D00') ||'%' ||';'|| 
+    undo_records ||';'|| 
+    rollbacks
+    ) a
 from g
 order by instance_number, bsnap_time;
 
