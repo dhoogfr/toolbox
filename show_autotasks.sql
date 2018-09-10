@@ -47,6 +47,8 @@ column job_start_time format a30 heading "Start Time"
 column job_status format a10 heading "Status"
 column job_error format 99999999 heading "Error"
 
+column job_name format a30
+
 prompt
 prompt Defined Autotask Operations
 prompt ===========================
@@ -209,14 +211,16 @@ prompt
 break on client_name skip 1
 
 select
-  client_name, 
+  client_name,
+  job_name,
   to_char(job_start_time, 'DD/MM/YYYY HH24:MI:SS TZH:TZM') job_start_time_str, 
   job_duration, 
   job_status, 
   job_error
 from
   ( select
-      client_name, 
+      client_name,
+      job_name, 
       job_status, 
       job_start_time, 
       job_duration, 
