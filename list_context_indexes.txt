@@ -1,0 +1,25 @@
+column idx_owner format a30
+column idx_name format a30
+column idx_table format a30
+column idx_text_name format a30
+column idx_sync_interval format a30
+column idx_sync_jobname format a30
+
+select
+  idx_owner,
+  idx_name,
+  idx_table,
+  idx_text_name,
+  idx_status,
+  idx_type,
+  idx_sync_type,
+  idx_sync_interval,
+  idx_sync_jobname
+from
+  ctxsys.ctx_indexes
+where
+  idx_table_owner not in ('CTXSYS')
+order by
+  idx_owner,
+  idx_name
+;
