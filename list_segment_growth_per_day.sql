@@ -9,6 +9,7 @@ column subobject_name format a30
 column owner format a30
 column object_type format a20
 column allocated_delta_mb format 9G999G999
+column tablespace_name format a40
 
 accept _owner prompt 'Segment Owner: '
 accept _segment_name prompt 'Segment Name: '
@@ -20,6 +21,7 @@ select
   object_name,
   subobject_name,
   object_type,
+  tablespace_name,
   allocated_delta_mb
 from
   ( select
@@ -28,6 +30,7 @@ from
       obj.object_name,
       obj.subobject_name,
       obj.object_type,
+      obj.tablespace_name,
       sum(hseg.space_allocated_delta/1024/1024) allocated_delta_mb
     from
       dba_hist_seg_stat hseg
@@ -55,7 +58,8 @@ from
       obj.owner,
       obj.object_name,
       obj.subobject_name,
-      obj.object_type
+      obj.object_type,
+      tablespace_name
   )
 order by
   day
