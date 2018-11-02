@@ -44,6 +44,7 @@ from
       -- use this contruct to push the tablespace predicate further down
       -- using a filter on dba_hist_seg_stat_obj itself would only filter on tablespace name as one of the latest steps
       hseg.ts# = (select distinct ts# from dba_hist_seg_stat_obj where tablespace_name = '&1')
+      and hseg.instance_number = 1
     group by
       obj.owner,
       obj.object_name,
