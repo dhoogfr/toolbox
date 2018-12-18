@@ -32,11 +32,13 @@ fi
 drive_array=(xvda xvdb xvdc xvdd xvde xvdf xvdg xvdh xvdi xvdj xvdk xvdl xvdm xvdn xvdo xvdp xvdq xvdr xvds xvdt xvdv xvdw xvdx xvdy xvdz xvdaa xvdab xvdac xvdad xvdae xvdae xvdaf xvdag xvdah xvdai xvdaj xvdak)
 
 ### get the uuid of the guest on which the new disk needs to be added
-guest_uuid=$(xl list-vm | grep ${guest_name}| tr -d '-' |cut -d' ' -f1)
+guest_uuid=$(xl vm-list | grep ${guest_name}| tr -d '-' |cut -d' ' -f1)
 if [ "${guest_uuid}" == "" ]
 then
-  echo "could not get guest uuid, pleace check guest name"
+  echo "FAIL - Could not get guest uuid, pleace check guest name"
   exit -1
+else
+  echo "Guest UUID: ${guest_uuid}"
 fi
 
 ### get the number of current attached block devices, as the output also includes a header, this is already the next available slot number
@@ -45,32 +47,37 @@ fi
 next_slot=$(($(xm block-list ${guest_name} | wc -l)-1))
 if [ "${next_slot}" == "" ]
 then
-  echo "could not determine a free slot number, check outcome of xm block list ${guest_name}"
+  echo "FAIL - Could not determine a free slot number, check outcome of xm block list ${guest_name}"
   exit -1
+else
+  echo "Next drive slot: ${next_slot}"
 fi
 
 ### convert the new slot number to a drive name
 next_drive=${drive_array[${next_slot}]}
 if [ "${next_drive}" == "" ] || [[ ${next_drive} != xvd* ]]
 then
-  echo "could not convert ${next_slot} to drive, check the drive_array variable"
+  echo "FAIL - Could not convert ${next_slot} to drive, check the drive_array variable"
   exit -1
+else
+  echo "The new disk will be known on the vm as /dev/${next_drive}"
 fi
-echo "the new disk will be known on the vm as /dev/${next_drive}"
 
 ### generate a new uuid to be used for the new disk
 disk_uuid=$(uuidgen | tr -d '-')
 if [ "${disk_uuid}" == "" ]
 then
-  echo "could not generate a new disk_uuid, check path variable for uuidgen"
+  echo "FAIL - Could not generate a new disk_uuid, check path variable for uuidgen"
   exit -1
+else
+  echo "Generated disk UUID: ${disk_uuid}"
 fi
 
 ### create the virtual disk based upon the input parameters
 ### check first if the disk not already exists
 if [ -e "/EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img" ]
 then
-  echo "file /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img already exists, use a different disk name"
+  echo "FAIL - File /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img already exists, use a different disk name"
   exit -1
 fi
 
@@ -81,10 +88,11 @@ qemu-img create /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img ${disk_s
 ### check if the disks exists
 if [ ! -e "/EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img" ]
 then
-  echo "file /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img was not created, check free disk space"
+  echo "FAIL - File /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img was not created, check free disk space"
   exit -1
+else
+  echo "Created disk image /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img"
 fi
-echo "disk has been created"
 
 ### create the symbolic link, using the uuid of the vm guest and the newly generated uuid
 ln -s /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img /OVS/Repositories/${guest_uuid}/VirtualDisks/${disk_uuid}.img
@@ -92,8 +100,10 @@ ln -s /EXAVMIMAGES/GuestImages/${guest_name}/${disk_name}.img /OVS/Repositories/
 ### check if the symbolic link was correctly created
 if [ ! -h "/OVS/Repositories/${guest_uuid}/VirtualDisks/${disk_uuid}.img" ]
 then
-  echo "could not create symbolic link /OVS/Repositories/${guest_uuid}/VirtualDisks/${disk_uuid}.img"
+  echo "FAIL - Could not create symbolic link /OVS/Repositories/${guest_uuid}/VirtualDisks/${disk_uuid}.img"
   exit -1
+else
+  echo "Symbolic link /OVS/Repositories/${guest_uuid}/VirtualDisks/${disk_uuid}.img generated"
 fi
 
 ### attach the block
@@ -101,8 +111,10 @@ xm block-attach ${guest_name} file:/OVS/Repositories/${guest_uuid}/VirtualDisks/
 result_code=$?
 if [ ${result_code} -ne 0 ]
 then
-  echo "an error occured during the attach of the virtual disk, check console output"
+  echo "FAIL - An error occured during the attach of the virtual disk, check console output"
   exit -1
+else
+  echo "New disk was successfully attached to VM"
 fi
 
 ### add the new disk to the vm config file, so it is attached when restarted
@@ -110,12 +122,14 @@ fi
 ### It does this by using grouping and back references (eg \1)
 ### The first group is "disk = [", the second contains the existing disk strings and the third "]"
 ### The new string is then inserted between the second and third back reference  
-sed -i "s/\(^disk = \[\)\(.*\)\(\]\)/\1\2,\'file:\/OVS\/Repositories\/${guest_uuid}\/VirtualDisks\/${disk_uuid}.img,${next_drive},w\'\3/" /EXAVMIMAGES/GuestImages/${guest_name}/vm.cfg
+sed -i.$(date '+%Y%m%d%H%M%S') "s/\(^disk = \[\)\(.*\)\(\]\)/\1\2,\'file:\/OVS\/Repositories\/${guest_uuid}\/VirtualDisks\/${disk_uuid}.img,${next_drive},w\'\3/" /EXAVMIMAGES/GuestImages/${guest_name}/vm.cfg
 result_code=$?
 if [ ${result_code} -ne 0 ]
 then
-  echo "an error occured during the modification of the vm config file, check console output"
+  echo "FAIL - An error occured during the modification of the vm config file, check console output"
   exit -1
+else
+  echo "Disk added to config file /EXAVMIMAGES/GuestImages/${guest_name}/vm.cfg"
 fi
 
 exit 0
