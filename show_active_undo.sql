@@ -9,6 +9,7 @@ column osuser format a30
 column machine format a30
 column program format a50
 column used_undo_mb format 9G999G999D99
+column start_date_str format a14
 
 select
   ses.inst_id,
@@ -18,7 +19,9 @@ select
   ses.osuser,
   ses.machine,
   ses.program,
-  tra.used_ublk * 8 / 1024 as used_undo_mb
+  to_char(tra.start_date, 'DD/MM HH24:MI:SS') as start_date_str,
+  tra.used_ublk * 8 / 1024 as used_undo_mb,
+  tra.status
 from
   gv$session ses
     join gv$transaction tra
