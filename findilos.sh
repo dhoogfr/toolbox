@@ -86,9 +86,12 @@ iprange=$1
 # prepare lookup file for iLO hardware versions
 
 cat > $ilohwvers << EOF
-iLO-1 shows hw version ASIC:  2
+iLO-1 shows hw version ASIC: 2
 iLO-2 shows hw version ASIC:  7
 iLO-3 shows hw version ASIC: 8
+iLO-3 shows hw version ASIC: 9
+iLO-4 shows hw version ASIC: 12
+iLO-5 shows hw version ASIC: 21
 i-iLO shows hw version T0
 EOF
 
@@ -119,7 +122,7 @@ while read iloip <&3 ; do
   # attempt to read the xmldata from iLO, no password required
   #
   curl --proxy "" --fail --silent --max-time 3 http://$iloip/xmldata?item=All > $iloxml
-  curl -sqk "https://$iloip/xmldata?item=CpqKey" >> $iloxml
+  curl -sqk "http://$iloip/xmldata?item=CpqKey" >> $iloxml
 
 
   #
