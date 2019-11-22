@@ -86,9 +86,12 @@ iprange=$1
 # prepare lookup file for iLO hardware versions
 
 cat > $ilohwvers << EOF
-iLO-1 shows hw version ASIC:  2
+iLO-1 shows hw version ASIC: 2
 iLO-2 shows hw version ASIC:  7
 iLO-3 shows hw version ASIC: 8
+iLO-3 shows hw version ASIC: 9
+iLO-4 shows hw version ASIC: 12
+iLO-5 shows hw version ASIC: 21
 i-iLO shows hw version T0
 EOF
 
@@ -109,9 +112,9 @@ printf "\n\n"
 
 exec 3< $iloips
 
-echo "--------------- ------ -------- ------------ -------------------------"
-echo "iLO IP Address  iLO HW iLO FW   Server S/N   Server Model"
-echo "--------------- ------ -------- ------------ -------------------------"
+echo "--------------- ------ -------- ------------ ------------------------- -----------------------------"
+echo "iLO IP Address  iLO HW iLO FW   Server S/N   Server Model              License key"
+echo "--------------- ------ -------- ------------ ------------------------- -----------------------------"
 
 while read iloip <&3 ; do
   ilosfound=$ilosfound+1
@@ -119,6 +122,8 @@ while read iloip <&3 ; do
   # attempt to read the xmldata from iLO, no password required
   #
   curl --proxy "" --fail --silent --max-time 3 http://$iloip/xmldata?item=All > $iloxml
+  curl -sqk "http://$iloip/xmldata?item=CpqKey" >> $iloxml
+
 
   #
   # parse out the Server model (server product name)
@@ -130,6 +135,7 @@ while read iloip <&3 ; do
   parseiloxml PN;   ilotype=$parsedstring
   parseiloxml FWRI; ilofirmware=$parsedstring
   parseiloxml HWRI; ilohardware=$parsedstring
+  parseiloxml KEY; ilolicensekey=$parsedstring
 
   ilohwver=$(grep "$ilohardware" $ilohwvers|awk '{print $1}')
   if [ "$ilohwver" == "" ]; then
@@ -140,12 +146,12 @@ while read iloip <&3 ; do
     sernum="N/A"
   fi
 
-  printf "%-15s %-6s %-8s %-12s %s\n" $iloip "$ilohwver" "$ilofirmware" "$sernum" "$servermodel"
+  printf "%-15s %-6s %-8s %-12s %-25s %s\n" $iloip "$ilohwver" "$ilofirmware" "$sernum" "$servermodel" "$ilolicensekey"
 
 done
 
-printf "\n%d iLOs found on network target %s.\n\n" $ilosfound $iprange
 
+printf "\n%d iLOs found on network target %s.\n\n" $ilosfound $iprange
 rm -f $iloips $iloxml $ilohwvers
 
 exit 0
