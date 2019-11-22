@@ -50,7 +50,7 @@
 --
 --------------------------------------------------------------------------------
 --
---   The Session Snapper v4.30 ( USE AT YOUR OWN RISK !!! )
+--   The Session Snapper v4.50 ( USE AT YOUR OWN RISK !!! )
 --   (c) Tanel Poder ( http://blog.tanelpoder.com )
 --
 --
@@ -418,7 +418,7 @@ end;
 -- this query populates some sqlplus variables required for dynamic compilation used below
 with mod_banner as (
     select
-        replace(banner,' 9.','09.') banner
+        replace(banner,'9.','09.') banner
     from
         v$version
     where rownum = 1
@@ -523,8 +523,6 @@ declare
 
     g_mysid           number;
 
-    top_n number;
-
     i number;
     a number;
     b number;
@@ -574,7 +572,7 @@ declare
     output_inst_sid   number := CASE WHEN dbms_utility.is_cluster_database = TRUE THEN 1 ELSE 0 END; -- inst_id and sid together 
     output_time       number := 0; -- time of snapshot start
     output_seconds    number := 0; -- seconds in snapshot (shown in footer of each snapshot too)
-    output_stype      number := 1; -- statistic type (WAIT,STAT,TIME,ENQG,LATG,...)
+    output_stype      number := 1; -- statistic type (WAIT,WIDL(idle wait),STAT,TIME,ENQG,LATG,...)
     output_sname      number := 1; -- statistic name
     output_delta      number := 1; -- raw delta
     output_delta_s    number := 0; -- raw delta normalized to per second
@@ -771,11 +769,11 @@ declare
              || CASE WHEN output_delta_s     = 1 THEN to_char(delta/(case get_seconds(d2-d1) when 0 then &snapper_sleep else get_seconds(d2-d1) end),'999999999')||', ' END
              || CASE WHEN output_hdelta      = 1 THEN lpad(tptformat(delta, s2(b).stype), 10, ' ')||', ' END
              || CASE WHEN output_hdelta_s    = 1 THEN lpad(tptformat(delta/(case get_seconds(d2-d1) when 0 then &snapper_sleep else get_seconds(d2-d1) end ), s2(b).stype), 10, ' ')||', ' END
-             || CASE WHEN output_percent     = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT') THEN to_char(delta/CASE get_seconds(d2-d1) WHEN 0 THEN &snapper_sleep ELSE get_seconds(d2-d1) END / 10000, '9999.9')||'%' ELSE '        ' END END||', '
-             || CASE WHEN output_pcthist     = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT') THEN rpad(rpad('[', ceil(round(delta/CASE get_seconds(d2-d1) WHEN 0 THEN &snapper_sleep ELSE get_seconds(d2-d1) END / 100000,1))+1, CASE WHEN s2(b).stype IN ('WAIT') THEN 'W' WHEN sn(s2(b).statistic#).name = 'DB CPU' THEN '@' ELSE '#' END),11,' ')||']' ELSE '            ' END END||', '
-             || CASE WHEN output_eventcnt    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN to_char(evcnt, '99999999') ELSE '         ' END END||', '
-             || CASE WHEN output_eventcnt_s  = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat((evcnt / case get_seconds(d2-d1) when 0 then &snapper_sleep else get_seconds(d2-d1) end ), 'STAT' ), 10, ' ') ELSE '          ' END END||', '
-             || CASE WHEN output_eventavg    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT') THEN lpad(tptformat(delta / CASE WHEN evcnt = 0 THEN 1 ELSE evcnt END, s2(b).stype), 10, ' ')||' average wait' ELSE get_useful_average(s2(b), s1(a)) END END
+             || CASE WHEN output_percent     = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT','WIDL') THEN to_char(delta/CASE get_seconds(d2-d1) WHEN 0 THEN &snapper_sleep ELSE get_seconds(d2-d1) END / 10000, '9999.9')||'%' ELSE '        ' END END||', '
+             || CASE WHEN output_pcthist     = 1 THEN CASE WHEN s2(b).stype IN ('TIME','WAIT','WIDL') THEN rpad(rpad('[', ceil(round(delta/CASE get_seconds(d2-d1) WHEN 0 THEN &snapper_sleep ELSE get_seconds(d2-d1) END / 100000,1))+1, CASE WHEN s2(b).stype IN ('WAIT','WIDL') THEN 'W' WHEN sn(s2(b).statistic#).name = 'DB CPU' THEN '@' ELSE '#' END),11,' ')||']' ELSE '            ' END END||', '
+             || CASE WHEN output_eventcnt    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT','WIDL') THEN to_char(evcnt, '99999999') ELSE '         ' END END||', '
+             || CASE WHEN output_eventcnt_s  = 1 THEN CASE WHEN s2(b).stype IN ('WAIT','WIDL') THEN lpad(tptformat((evcnt / case get_seconds(d2-d1) when 0 then &snapper_sleep else get_seconds(d2-d1) end ), 'STAT' ), 10, ' ') ELSE '          ' END END||', '
+             || CASE WHEN output_eventavg    = 1 THEN CASE WHEN s2(b).stype IN ('WAIT','WIDL') THEN lpad(tptformat(delta / CASE WHEN evcnt = 0 THEN 1 ELSE evcnt END, s2(b).stype), 10, ' ')||' average wait' ELSE get_useful_average(s2(b), s1(a)) END END
         );
 
     end;
@@ -1030,7 +1028,7 @@ declare
         if p_num = 0 then return '0'; end if;
         if p_num IS NULL then return '~'; end if;
 
-        if p_stype in ('WAIT','TIME') then
+        if p_stype in ('WAIT','WIDL','TIME') then
 
             return
                 round(
@@ -1329,7 +1327,7 @@ declare
                                          --
                                          union all
                                          select
-                                                'WAIT', s.inst_id, s.sid,
+                                                CASE WHEN en.wait_class = 'Idle' THEN 'WIDL' ELSE 'WAIT' END, s.inst_id, s.sid,
                                                 en.event# + (select count(*) from v$statname) + 1 - pls_adjust,
                                                 nvl(se.time_waited_micro,0) + ( decode(se.event||s.state, s.event||'WAITING', 
                                                                                     CASE WHEN s.seconds_in_wait > 1300000000 THEN 0 ELSE s.seconds_in_wait END -- bug in v$session
@@ -1895,6 +1893,7 @@ declare
 
   end out_ash;
 
+
 -- and it begins!!!
 begin
 
@@ -1939,7 +1938,7 @@ begin
  
     if pagesize > 0 then
         output(' ');
-        output('-- Session Snapper v4.30 - by Tanel Poder ( http://blog.tanelpoder.com/snapper ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
+        output('-- Session Snapper v4.50 - by Tanel Poder ( https://blog.tanelpoder.com/ ) - Enjoy the Most Advanced Oracle Troubleshooting Script on the Planet! :)');
         output(' ');
     end if;
 
@@ -1953,7 +1952,7 @@ begin
                                  where (lv_gather like '%s%' or lv_gather like '%a%')
                                  --
                                  union all
-                                 select 'WAIT',
+                                 select CASE WHEN wait_class = 'Idle' THEN 'WIDL' ELSE 'WAIT' END,
                                         event# + (select count(*) from v$statname) + 1 - pls_adjust, name
                                  from v$event_name
                                  where (lv_gather like '%w%' or lv_gather like '%a%')
@@ -2239,15 +2238,14 @@ begin
             g_ash_columns6 := case when getopt('&snapper_options', 'ash6' ) is null then null when getopt('&snapper_options', 'ash6' ) = chr(0) then g_ash_columns6 else getopt('&snapper_options', 'ash6=' ) end;
 
             -- group ASH records and print report
-            top_n := nvl( getopt('&snapper_options', 'topn=' ), 10 );
-            out_ash( g_ash_columns, top_n );
+            out_ash( g_ash_columns, 10 );
             -- group and print optional ASH reports
-            if g_ash_columns1 is not null then out_ash( g_ash_columns1, top_n ); end if;
-            if g_ash_columns2 is not null then out_ash( g_ash_columns2, top_n ); end if;
-            if g_ash_columns3 is not null then out_ash( g_ash_columns3, top_n ); end if;
-            if g_ash_columns4 is not null then out_ash( g_ash_columns4, top_n ); end if;
-            if g_ash_columns5 is not null then out_ash( g_ash_columns5, top_n ); end if;
-            if g_ash_columns6 is not null then out_ash( g_ash_columns6, top_n ); end if;
+            if g_ash_columns1 is not null then out_ash( g_ash_columns1, 10 ); end if;
+            if g_ash_columns2 is not null then out_ash( g_ash_columns2, 10 ); end if;
+            if g_ash_columns3 is not null then out_ash( g_ash_columns3, 10 ); end if;
+            if g_ash_columns4 is not null then out_ash( g_ash_columns4, 10 ); end if;
+            if g_ash_columns5 is not null then out_ash( g_ash_columns5, 10 ); end if;
+            if g_ash_columns6 is not null then out_ash( g_ash_columns6, 10 ); end if;
 
 
             if pagesize > 0 then 
@@ -2265,7 +2263,7 @@ begin
     end loop; -- for c in 1..snapper_count
 
     exception when others then
-        raise_application_error(-20000, 'Snapper: Probably bad syntax or no execute rights on SYS.DBMS_LOCK'||chr(10)||'Check http://blog.tanelpoder.com/snapper for instructions'||chr(10)||sqlerrm||chr(10)||'Stack Trace:'||chr(10)||dbms_utility.format_error_backtrace);
+        raise_application_error(-20000, 'Snapper: Probably bad syntax or no execute rights on SYS.DBMS_LOCK'||chr(10)||'Check http://blog.tanelpoder.com/snapper for instructions'||chr(10)||sqlerrm);
 
 end;
 /
