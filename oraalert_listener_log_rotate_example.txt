@@ -1,0 +1,19 @@
+/u01/app/oracle/diag/rdbms/*/*/trace/alert_*log
+{ rotate 13
+  monthly
+  notifempty
+  missingok
+  copytruncate
+  nocreate
+  compress
+}
+
+/u01/app/oracle/diag/tnslsnr/*/*/trace/*.log
+{ rotate 4
+  weekly 
+  notifempty
+  missingok
+  copytruncate
+  nocreate
+  compress
+}
