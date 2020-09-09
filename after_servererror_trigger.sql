@@ -15,7 +15,8 @@ create table log_errors_tab
   log_date      date,
   err_msg       clob,
   stm           clob,
-  username      varchar2(30)
+  username      varchar2(30),
+  err_depth     number
 )
 tablespace sysaux;
  
@@ -47,8 +48,8 @@ BEGIN
     end loop;
 
     for n in 1..ora_server_error_depth loop
-        insert into log_errors_tab (id, log_date, err_msg, stm, username)
-        values (id, sysdate, ora_server_error_msg(n),stmt, ora_login_user);
+        insert into log_errors_tab (id, log_date, err_msg, stm, username, err_depth)
+        values (id, sysdate, ora_server_error_msg(n),stmt, ora_login_user, n);
     end loop;
 
 EXCEPTION
