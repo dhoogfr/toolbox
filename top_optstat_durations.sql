@@ -1,7 +1,7 @@
 /* list the top 10 cbo stats gathering durations
 */
 
-set linesize 300
+set linesize 500
 set pages 50000
 
 column target format a64
@@ -10,7 +10,7 @@ column nbr_blocks format 9G999G999G999
 column start_time_str format a30
 column end_time_str format a30
 column status format a15
-column duration format a15
+column duration format a20
 column estimated_cost format 999G999
 column notes_xml format a220
 

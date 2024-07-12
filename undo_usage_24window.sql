@@ -1,6 +1,8 @@
-set linesize 150
+set linesize 300
 set pagesize 9999
 set echo off
+set trim on
+set tab off
 set verify off
 
 column undo_retention_time format a20
@@ -41,7 +43,7 @@ order by
 column begin_time format a17
 column end_time format a17
 column retention_undo_usage format 9G999G999D99 heading "Undo ret period"
-column curr_undo_usage format 9G999D99 heading "undo usage"
+column curr_undo_usage format 9G999G999D99 heading "undo usage"
 column pct_used format 999D99
 column ts_ss format 99D99
 column err format a12

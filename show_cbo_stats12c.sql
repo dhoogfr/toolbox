@@ -1,5 +1,5 @@
 -- setup the reporting environment
-set linesize 250
+set linesize 350
 set pagesize 50000
 set tab off
 set long 50000
@@ -48,14 +48,14 @@ column nbr_directives heading "#Directives" format 9G999G999
 column notes heading "Notes" format a30
 column nullable heading "Null|Table" format a4
 column num_buckets heading "Number|Buckets" format 990
-column num_distinct heading "Distinct|Values" format 999G999G990
-column num_nulls heading "Number|Nulls" format 999G999G990
-column num_rows heading "Number|Of Rows" format 999G999G990
+column num_distinct heading "Distinct|Values" format 999G999G999G990
+column num_nulls heading "Number|Nulls" format 999G999G999G990
+column num_rows heading "Number|Of Rows" format 999G999G999G990
 column object_name heading "Object Name" format a30
 column object_type heading "Object Type" format a15
 column partition_name heading "Partition|Name" format a30
 column partition_type heading "Partition|Type" format a9
-column sample_size heading "Sample|Size" format 999G999G990
+column sample_size heading "Sample|Size" format 999G999G999G990
 column scope heading "Scope" format a8
 column stale_stats heading "Stale" format a5
 column stattype_locked heading "Stats|Lock" format a5

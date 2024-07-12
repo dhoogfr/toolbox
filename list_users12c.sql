@@ -61,6 +61,7 @@ select
       decode (regexp_instr (nvl2 (u.spare4, u.spare4, ' '), 'T:'), 0, '', '12C ') ||
       decode (regexp_instr (regexp_replace ( nvl2(u.spare4, u.spare4, ' '), 'H:00000000000000000000000000000000', 'not_a_verifier'), 'H:'), 0, '', 'HTTP ')
     ) password_versions
+--    u.spare4 as password_hash
 from 
   sys.user$ u 
     left outer join sys.resource_group_mapping$ cgm
